@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiEditAssetRouteImport } from './routes/api/edit-asset'
 import { Route as ApiGenerateAssetRouteImport } from './routes/api/generate-asset'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEditAssetRoute = ApiEditAssetRouteImport.update({
+  id: '/api/edit-asset',
+  path: '/api/edit-asset',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGenerateAssetRoute = ApiGenerateAssetRouteImport.update({
@@ -25,27 +31,31 @@ const ApiGenerateAssetRoute = ApiGenerateAssetRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/generate-asset'
+  fullPaths: '/' | '/api/edit-asset' | '/api/generate-asset'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/generate-asset'
-  id: '__root__' | '/' | '/api/generate-asset'
+  to: '/' | '/api/edit-asset' | '/api/generate-asset'
+  id: '__root__' | '/' | '/api/edit-asset' | '/api/generate-asset'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiEditAssetRoute: typeof ApiEditAssetRoute
   ApiGenerateAssetRoute: typeof ApiGenerateAssetRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/edit-asset': {
+      id: '/api/edit-asset'
+      path: '/api/edit-asset'
+      fullPath: '/api/edit-asset'
+      preLoaderRoute: typeof ApiEditAssetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/generate-asset': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiEditAssetRoute: ApiEditAssetRoute,
   ApiGenerateAssetRoute: ApiGenerateAssetRoute,
 }
 export const routeTree = rootRouteImport
