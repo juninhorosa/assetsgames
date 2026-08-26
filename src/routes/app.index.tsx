@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Box,
   Download,
   FolderPlus,
   Loader2,
@@ -37,6 +38,7 @@ import {
 import { PbrControls } from "@/components/studio/PbrControls";
 import { SpritePlayer } from "@/components/studio/SpritePlayer";
 import { MaterialPreview3D } from "@/components/studio/MaterialPreview3D";
+import { Model3DPreview } from "@/components/studio/Model3DPreview";
 
 import {
   ANIMATION_PRESETS,
@@ -59,6 +61,13 @@ import {
   type MapType,
   type PbrOptions,
 } from "@/lib/image-pipeline";
+import {
+  DEFAULT_RELIEF_OPTIONS,
+  buildRelief,
+  exportGlb,
+  type MeshData,
+  type ReliefOptions,
+} from "@/lib/mesh-3d";
 import { streamEdit, streamGenerate } from "@/lib/stream-image";
 import {
   ENGINE_LABELS,
@@ -86,6 +95,20 @@ const SIZES = [
   { value: "1536x1024", label: "Paisagem 1536×1024" },
   { value: "1024x1536", label: "Retrato 1024×1536" },
 ];
+
+/** True when the image already carries transparency (so cut-out can be skipped). */
+function hasAlpha(img: HTMLImageElement): boolean {
+  const canvas = document.createElement("canvas");
+  const size = 64;
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return false;
+  ctx.drawImage(img, 0, 0, size, size);
+  const { data } = ctx.getImageData(0, 0, size, size);
+  for (let i = 3; i < data.length; i += 4) if (data[i]! < 250) return true;
+  return false;
+}
 
 function Generator() {
   const qc = useQueryClient();
@@ -130,6 +153,8 @@ function Generator() {
   const [rects, setRects] = useState<FrameRect[]>([]);
   const [cell, setCell] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [fps] = useState(12);
+  const [relief, setRelief] = useState<MeshData | null>(null);
+  const [reliefOpts, setReliefOpts] = useState<ReliefOptions>(DEFAULT_RELIEF_OPTIONS);
 
   const params = { mode, animation, columns, rows, uiKind };
   const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind]);
@@ -166,6 +191,7 @@ function Generator() {
     setMaps({});
     setFrames([]);
     setRects([]);
+    setRelief(null);
   }
 
   async function generate() {
@@ -249,6 +275,39 @@ function Generator() {
       setRects(result.rects);
       setCell({ w: result.cellWidth, h: result.cellHeight });
       toast.success(`${result.frames.length} quadros extraídos`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** 2.5D reliefization: silhueta (alpha) + luminância (altura) -> malha. */
+  async function buildMesh() {
+    if (!image) return;
+    setBusy("Construindo malha 3D");
+    try {
+      const raw = await loadImage(image);
+      // A malha precisa de alpha; recorta o fundo branco caso ainda esteja opaco.
+      const source = raw.width && !hasAlpha(raw) ? removeBackground(raw) : image;
+      const img = source === image ? raw : await loadImage(source);
+      if (source !== image) setImage(source);
+      setRelief(buildRelief(img, reliefOpts));
+      toast.success("Malha 3D gerada");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadGlb() {
+    if (!relief || !image) return;
+    setBusy("Exportando GLB");
+    try {
+      const blob = await exportGlb(relief, image, slugify(name || "asset"));
+      downloadBlob(blob, `${slugify(name || "asset")}.glb`);
+      toast.success("GLB exportado");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -576,6 +635,15 @@ function Generator() {
           </section>
         )}
 
+        {relief && image && (
+          <section className="space-y-3">
+            <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+              Modelo 3D
+            </h2>
+            <Model3DPreview mesh={relief} albedo={image} />
+          </section>
+        )}
+
         {Object.keys(maps).length > 0 && (
           <section className="space-y-3">
             <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
@@ -626,6 +694,80 @@ function Generator() {
             >
               Fatiar {columns}×{rows} quadros
             </Button>
+          )}
+          {mode === "model3d" && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Profundidade</Label>
+                  <span className="font-mono text-[11px] text-primary">
+                    {reliefOpts.depth.toFixed(2)}
+                  </span>
+                </div>
+                <Slider
+                  min={0.05}
+                  max={1}
+                  step={0.05}
+                  value={[reliefOpts.depth]}
+                  onValueChange={([v]) =>
+                    setReliefOpts({ ...reliefOpts, depth: v ?? reliefOpts.depth })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Suavização</Label>
+                  <span className="font-mono text-[11px] text-primary">
+                    {reliefOpts.smooth.toFixed(2)}
+                  </span>
+                </div>
+                <Slider
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  value={[reliefOpts.smooth]}
+                  onValueChange={([v]) =>
+                    setReliefOpts({ ...reliefOpts, smooth: v ?? reliefOpts.smooth })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Resolução da malha</Label>
+                <Select
+                  value={String(reliefOpts.segments)}
+                  onValueChange={(v) => setReliefOpts({ ...reliefOpts, segments: Number(v) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[48, 96, 128, 192, 256].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}×{n} quads
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={buildMesh}
+                disabled={!image || busy !== null}
+              >
+                <Box className="size-4" />
+                Gerar malha 3D
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={downloadGlb}
+                disabled={!relief || busy !== null}
+              >
+                <Download className="size-4" />
+                Baixar .glb
+              </Button>
+            </>
           )}
           {mode === "texture" && (
             <>
