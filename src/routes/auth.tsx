@@ -83,6 +83,12 @@ function AuthPage() {
       return;
     }
     if (result.redirected) return;
+
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) {
+      toast.error("O Google autorizou o acesso, mas a sessão não foi salva. Tente novamente.");
+      return;
+    }
     navigate({ to: "/app" });
   }
 
