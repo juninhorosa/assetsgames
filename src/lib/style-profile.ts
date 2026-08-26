@@ -1,6 +1,6 @@
 export type StyleKey = "pixel-art" | "low-poly" | "stylized" | "pbr-realistic";
 
-export type AssetMode = "sprite" | "spritesheet" | "texture" | "ui";
+export type AssetMode = "sprite" | "spritesheet" | "texture" | "ui" | "model3d";
 
 export interface StyleProfile {
   style: StyleKey;
@@ -41,6 +41,7 @@ export const MODE_LABELS: Record<AssetMode, string> = {
   spritesheet: "Sprite Sheet + Animação",
   texture: "Textura PBR",
   ui: "UI / Ícone",
+  model3d: "Modelo 3D (relevo)",
 };
 
 export interface GenerationParams {
@@ -95,6 +96,14 @@ export function buildPrompt(
       return [
         `A single game UI ${params.uiKind ?? "icon"}: ${userPrompt}.`,
         "Centered, isolated on a solid flat pure white background, no text, no watermark, crisp clean edges suitable for alpha cut-out, subtle inner bevel and readable silhouette.",
+        styleLine + "." + extra,
+      ].join(" ");
+    case "model3d":
+      return [
+        `A single game prop for 3D conversion: ${userPrompt}.`,
+        "Strict orthographic front view, perfectly centered and axis-aligned, no perspective distortion, no camera tilt.",
+        "Even diffuse lighting with soft self-shading that reads as volume: brighter where the surface faces the viewer, darker in recesses and cavities, so luminance can be used as a depth map.",
+        "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out, clean readable silhouette, subject fills the frame.",
         styleLine + "." + extra,
       ].join(" ");
     case "sprite":
