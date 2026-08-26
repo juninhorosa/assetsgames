@@ -60,7 +60,7 @@ export async function fetchProjects(): Promise<ProjectRow[]> {
 
 export async function createProject(input: {
   name: string;
-  description?: string | undefined;
+  description?: string | null;
   style_profile: StyleProfile;
 }): Promise<ProjectRow> {
   const { data: userData } = await supabase.auth.getUser();
@@ -68,7 +68,12 @@ export async function createProject(input: {
   if (!uid) throw new Error("Sessão expirada");
   const { data, error } = await supabase
     .from("projects")
-    .insert({ ...input, style_profile: input.style_profile as unknown as never, user_id: uid })
+    .insert({
+      name: input.name,
+      description: input.description ?? null,
+      style_profile: input.style_profile as unknown as never,
+      user_id: uid,
+    })
     .select()
     .single();
   if (error) throw error;
