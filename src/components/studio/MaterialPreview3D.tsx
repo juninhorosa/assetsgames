@@ -63,11 +63,11 @@ export function MaterialPreview3D({ maps }: { maps: Partial<Record<MapType, stri
         };
 
         const material = new THREE.MeshStandardMaterial({
-          map: load(maps.albedo),
-          normalMap: linear(maps.normal),
-          roughnessMap: linear(maps.roughness),
-          metalnessMap: linear(maps.metallic),
-          aoMap: linear(maps.ao),
+          map: load(maps.albedo) ?? null,
+          normalMap: linear(maps.normal) ?? null,
+          roughnessMap: linear(maps.roughness) ?? null,
+          metalnessMap: linear(maps.metallic) ?? null,
+          aoMap: linear(maps.ao) ?? null,
           metalness: maps.metallic ? 1 : 0.05,
           roughness: 1,
         });

@@ -15,7 +15,7 @@ const IMAGE_EVENTS = new Set([
 async function readStream(
   res: Response,
   onFrame: (dataUrl: string, isFinal: boolean) => void,
-): Promise<{ sawAnyEvent: boolean; sawCompleted: boolean; error?: string }> {
+): Promise<{ sawAnyEvent: boolean; sawCompleted: boolean; error?: string | undefined }> {
   let sawAnyEvent = false;
   let sawCompleted = false;
   let streamError: string | undefined;

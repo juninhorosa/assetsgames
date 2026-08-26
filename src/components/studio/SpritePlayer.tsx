@@ -55,7 +55,7 @@ export function SpritePlayer({
             max={30}
             step={1}
             value={[fps]}
-            onValueChange={([v]) => setFps(v)}
+            onValueChange={([v]) => setFps(v ?? fps)}
             aria-label="Quadros por segundo"
           />
         </div>
