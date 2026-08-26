@@ -14,7 +14,180 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      animations: {
+        Row: {
+          asset_id: string
+          created_at: string
+          fps: number
+          frame_data: Json
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          fps?: number
+          frame_data?: Json
+          id?: string
+          name?: string
+          user_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          fps?: number
+          frame_data?: Json
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "animations_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_maps: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          map_type: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          map_type: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          map_type?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_maps_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          asset_type: string
+          created_at: string
+          final_prompt: string | null
+          id: string
+          metadata: Json
+          name: string
+          params: Json
+          project_id: string
+          prompt: string
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_type?: string
+          created_at?: string
+          final_prompt?: string | null
+          id?: string
+          metadata?: Json
+          name?: string
+          params?: Json
+          project_id: string
+          prompt?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          final_prompt?: string | null
+          id?: string
+          metadata?: Json
+          name?: string
+          params?: Json
+          project_id?: string
+          prompt?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          style_profile: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          style_profile?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          style_profile?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
