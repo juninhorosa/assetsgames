@@ -10,12 +10,28 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApiEditAssetRouteImport } from './routes/api/edit-asset'
 import { Route as ApiGenerateAssetRouteImport } from './routes/api/generate-asset'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppLibraryRouteImport } from './routes/app.library'
+import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
+import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEditAssetRoute = ApiEditAssetRouteImport.update({
@@ -28,35 +44,102 @@ const ApiGenerateAssetRoute = ApiGenerateAssetRouteImport.update({
   path: '/api/generate-asset',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLibraryRoute = AppLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AppRoute,
+} as any)
+const DocsArchitectureRoute = DocsArchitectureRouteImport.update({
+  id: '/docs/architecture',
+  path: '/docs/architecture',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAssetIdRoute = AppAssetIdRouteImport.update({
+  id: '/asset/$id',
+  path: '/asset/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
+  '/app/library': typeof AppLibraryRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/app/': typeof AppIndexRoute
+  '/app/asset/$id': typeof AppAssetIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
+  '/app/library': typeof AppLibraryRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/app': typeof AppIndexRoute
+  '/app/asset/$id': typeof AppAssetIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
+  '/app/library': typeof AppLibraryRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
+  '/app/': typeof AppIndexRoute
+  '/app/asset/$id': typeof AppAssetIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/edit-asset' | '/api/generate-asset'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/api/edit-asset'
+    | '/api/generate-asset'
+    | '/app/library'
+    | '/docs/architecture'
+    | '/app/'
+    | '/app/asset/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/edit-asset' | '/api/generate-asset'
-  id: '__root__' | '/' | '/api/edit-asset' | '/api/generate-asset'
+  to:
+    | '/'
+    | '/auth'
+    | '/api/edit-asset'
+    | '/api/generate-asset'
+    | '/app/library'
+    | '/docs/architecture'
+    | '/app'
+    | '/app/asset/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/api/edit-asset'
+    | '/api/generate-asset'
+    | '/app/library'
+    | '/docs/architecture'
+    | '/app/'
+    | '/app/asset/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
   ApiEditAssetRoute: typeof ApiEditAssetRoute
   ApiGenerateAssetRoute: typeof ApiGenerateAssetRoute
+  DocsArchitectureRoute: typeof DocsArchitectureRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +149,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/edit-asset': {
@@ -82,13 +179,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateAssetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/library': {
+      id: '/app/library'
+      path: '/library'
+      fullPath: '/app/library'
+      preLoaderRoute: typeof AppLibraryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/docs/architecture': {
+      id: '/docs/architecture'
+      path: '/docs/architecture'
+      fullPath: '/docs/architecture'
+      preLoaderRoute: typeof DocsArchitectureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/asset/$id': {
+      id: '/app/asset/$id'
+      path: '/asset/$id'
+      fullPath: '/app/asset/$id'
+      preLoaderRoute: typeof AppAssetIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppLibraryRoute: typeof AppLibraryRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppAssetIdRoute: typeof AppAssetIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppLibraryRoute: AppLibraryRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppAssetIdRoute: AppAssetIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
   ApiEditAssetRoute: ApiEditAssetRoute,
   ApiGenerateAssetRoute: ApiGenerateAssetRoute,
+  DocsArchitectureRoute: DocsArchitectureRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
