@@ -82,9 +82,9 @@ export function removeBackground(img: HTMLImageElement, tolerance = 24): string 
   const stack: number[] = [];
 
   const isBg = (i: number) => {
-    const r = px[i * 4];
-    const g = px[i * 4 + 1];
-    const b = px[i * 4 + 2];
+    const r = px[i * 4]!;
+    const g = px[i * 4 + 1]!;
+    const b = px[i * 4 + 2]!;
     return 255 - Math.min(r, g, b) <= tolerance && Math.max(r, g, b) - Math.min(r, g, b) <= 16;
   };
 
@@ -111,7 +111,7 @@ export function removeBackground(img: HTMLImageElement, tolerance = 24): string 
 
   // Soften edge: pixels adjacent to transparency get partial alpha.
   const alphaCopy = new Uint8ClampedArray(w * h);
-  for (let i = 0; i < w * h; i++) alphaCopy[i] = px[i * 4 + 3];
+  for (let i = 0; i < w * h; i++) alphaCopy[i] = px[i * 4 + 3]!;
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
       const i = y * w + x;
@@ -132,7 +132,7 @@ export function removeBackground(img: HTMLImageElement, tolerance = 24): string 
 }
 
 function luminance(px: Uint8ClampedArray, i: number) {
-  return (0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2]) / 255;
+  return (0.299 * px[i * 4]! + 0.587 * px[i * 4 + 1]! + 0.114 * px[i * 4 + 2]!) / 255;
 }
 
 /** Derives Height, Normal, Roughness, Metallic and AO from an albedo image. */
@@ -163,7 +163,7 @@ export function derivePbrMaps(
         for (let dx = -r; dx <= r; dx += 1) {
           const xx = x + dx;
           if (xx < 0 || xx >= w) continue;
-          sum += height[yy * w + xx];
+          sum += height[yy * w + xx]!;
           count++;
         }
       }
@@ -179,13 +179,13 @@ export function derivePbrMaps(
   const aoMap = mk();
 
   const at = (x: number, y: number) =>
-    height[Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x))];
+    height[Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x))]!;
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = y * w + x;
       const o = i * 4;
-      const hv = height[i];
+      const hv = height[i]!;
 
       // Height
       const hb = Math.round(hv * 255);
@@ -229,7 +229,7 @@ export function derivePbrMaps(
       metalMap.data[o + 3] = 255;
 
       // AO: local cavity = height below its neighbourhood average
-      const cavity = clamp01(1 - (blurred[i] - hv) * 4 * opts.aoStrength);
+      const cavity = clamp01(1 - (blurred[i]! - hv) * 4 * opts.aoStrength);
       const ab = Math.round(cavity * 255);
       aoMap.data[o] = aoMap.data[o + 1] = aoMap.data[o + 2] = ab;
       aoMap.data[o + 3] = 255;
@@ -302,5 +302,5 @@ export function dataUrlToBytes(dataUrl: string): Uint8Array {
 }
 
 export function dataUrlToBlob(dataUrl: string): Blob {
-  return new Blob([dataUrlToBytes(dataUrl)], { type: "image/png" });
+  return new Blob([dataUrlToBytes(dataUrl) as BlobPart], { type: "image/png" });
 }
