@@ -16,6 +16,7 @@ import { Route as ApiEditAssetRouteImport } from './routes/api/edit-asset'
 import { Route as ApiGenerateAssetRouteImport } from './routes/api/generate-asset'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
+import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +54,11 @@ const AppLibraryRoute = AppLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => AppRoute,
 } as any)
+const DocsArchitectureRoute = DocsArchitectureRouteImport.update({
+  id: '/docs/architecture',
+  path: '/docs/architecture',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppAssetIdRoute = AppAssetIdRouteImport.update({
   id: '/asset/$id',
   path: '/asset/$id',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/app/library': typeof AppLibraryRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
   '/app/': typeof AppIndexRoute
   '/app/asset/$id': typeof AppAssetIdRoute
 }
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/app/library': typeof AppLibraryRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
   '/app': typeof AppIndexRoute
   '/app/asset/$id': typeof AppAssetIdRoute
 }
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/app/library': typeof AppLibraryRoute
+  '/docs/architecture': typeof DocsArchitectureRoute
   '/app/': typeof AppIndexRoute
   '/app/asset/$id': typeof AppAssetIdRoute
 }
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/app/library'
+    | '/docs/architecture'
     | '/app/'
     | '/app/asset/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/app/library'
+    | '/docs/architecture'
     | '/app'
     | '/app/asset/$id'
   id:
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/app/library'
+    | '/docs/architecture'
     | '/app/'
     | '/app/asset/$id'
   fileRoutesById: FileRoutesById
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiEditAssetRoute: typeof ApiEditAssetRoute
   ApiGenerateAssetRoute: typeof ApiGenerateAssetRoute
+  DocsArchitectureRoute: typeof DocsArchitectureRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/docs/architecture': {
+      id: '/docs/architecture'
+      path: '/docs/architecture'
+      fullPath: '/docs/architecture'
+      preLoaderRoute: typeof DocsArchitectureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/asset/$id': {
       id: '/app/asset/$id'
       path: '/asset/$id'
@@ -210,6 +230,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiEditAssetRoute: ApiEditAssetRoute,
   ApiGenerateAssetRoute: ApiGenerateAssetRoute,
+  DocsArchitectureRoute: DocsArchitectureRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
