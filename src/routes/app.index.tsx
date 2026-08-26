@@ -102,7 +102,7 @@ function Generator() {
     [projects, projectId],
   );
   useEffect(() => {
-    if (!projectId && projects.length) setProjectId(projects[0].id);
+    if (!projectId && projects[0]) setProjectId(projects[0].id);
   }, [projects, projectId]);
 
   const [profile, setProfile] = useState<StyleProfile>(DEFAULT_STYLE_PROFILE);
@@ -115,8 +115,8 @@ function Generator() {
   const [animation, setAnimation] = useState<string>("walk");
   const [columns, setColumns] = useState(4);
   const [rows, setRows] = useState(2);
-  const [uiKind, setUiKind] = useState(UI_KINDS[0]);
-  const [size, setSize] = useState(SIZES[0].value);
+  const [uiKind, setUiKind] = useState<string>(UI_KINDS[0]!);
+  const [size, setSize] = useState<string>(SIZES[0]!.value);
 
   const [image, setImage] = useState<string | null>(null);
   const [isFinal, setIsFinal] = useState(false);
@@ -326,7 +326,7 @@ function Generator() {
             <Select value={project?.id ?? ""} onValueChange={setProjectId}>
               <SelectTrigger className="flex-1">
                 <SelectValue
-                  placeholder={loadingProjects ? "carregando…" : "nenhum projeto"}
+                  placeholder={loadingProjects ? "carregando..." : "nenhum projeto"}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -391,7 +391,7 @@ function Generator() {
               max={10}
               step={1}
               value={[profile.detail]}
-              onValueChange={([v]) => setProfile({ ...profile, detail: v })}
+              onValueChange={([v]) => setProfile({ ...profile, detail: v ?? profile.detail })}
             />
           </div>
           <div className="space-y-2">
@@ -480,12 +480,12 @@ function Generator() {
                   max={8}
                   step={1}
                   value={[columns]}
-                  onValueChange={([v]) => setColumns(v)}
+                  onValueChange={([v]) => setColumns(v ?? columns)}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Linhas: {rows}</Label>
-                <Slider min={1} max={6} step={1} value={[rows]} onValueChange={([v]) => setRows(v)} />
+                <Slider min={1} max={6} step={1} value={[rows]} onValueChange={([v]) => setRows(v ?? rows)} />
               </div>
             </>
           )}

@@ -29,7 +29,7 @@ function Library() {
     [projects, projectId],
   );
   useEffect(() => {
-    if (!projectId && projects.length) setProjectId(projects[0].id);
+    if (!projectId && projects[0]) setProjectId(projects[0].id);
   }, [projects, projectId]);
 
   const { data: assets = [], isLoading } = useQuery({

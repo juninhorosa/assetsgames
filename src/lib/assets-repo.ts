@@ -60,7 +60,7 @@ export async function fetchProjects(): Promise<ProjectRow[]> {
 
 export async function createProject(input: {
   name: string;
-  description?: string;
+  description?: string | undefined;
   style_profile: StyleProfile;
 }): Promise<ProjectRow> {
   const { data: userData } = await supabase.auth.getUser();
@@ -68,7 +68,7 @@ export async function createProject(input: {
   if (!uid) throw new Error("Sessão expirada");
   const { data, error } = await supabase
     .from("projects")
-    .insert({ ...input, user_id: uid })
+    .insert({ ...input, style_profile: input.style_profile as unknown as never, user_id: uid })
     .select()
     .single();
   if (error) throw error;
@@ -78,7 +78,7 @@ export async function createProject(input: {
 export async function updateStyleProfile(projectId: string, profile: StyleProfile) {
   const { error } = await supabase
     .from("projects")
-    .update({ style_profile: profile })
+    .update({ style_profile: profile as unknown as never })
     .eq("id", projectId);
   if (error) throw error;
 }
@@ -126,8 +126,8 @@ export interface SaveAssetInput {
   finalPrompt: string;
   params: Record<string, unknown>;
   image: string;
-  maps?: Partial<Record<MapType, string>>;
-  frames?: string[];
+  maps?: Partial<Record<MapType, string>> | undefined;
+  frames?: string[] | undefined;
   animation?: {
     name: string;
     fps: number;
@@ -136,7 +136,7 @@ export interface SaveAssetInput {
     cellWidth: number;
     cellHeight: number;
     rects: FrameRect[];
-  };
+  } | undefined;
 }
 
 export async function saveAsset(input: SaveAssetInput): Promise<string> {
@@ -153,7 +153,7 @@ export async function saveAsset(input: SaveAssetInput): Promise<string> {
       asset_type: input.mode,
       prompt: input.prompt,
       final_prompt: input.finalPrompt,
-      params: input.params,
+      params: input.params as unknown as never,
       metadata: { frameCount: input.frames?.length ?? 0 },
     })
     .select()
@@ -195,7 +195,7 @@ export async function saveAsset(input: SaveAssetInput): Promise<string> {
     const { name, fps, ...frame_data } = input.animation;
     const { error: animErr } = await supabase
       .from("animations")
-      .insert({ asset_id: assetId, user_id: uid, name, fps, frame_data });
+      .insert({ asset_id: assetId, user_id: uid, name, fps, frame_data: frame_data as unknown as never });
     if (animErr) throw animErr;
   }
 

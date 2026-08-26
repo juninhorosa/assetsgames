@@ -41,7 +41,7 @@ export function PbrControls({
             max={row.max}
             step={row.step}
             value={[options[row.key]]}
-            onValueChange={([v]) => onChange({ ...options, [row.key]: v })}
+            onValueChange={([v]) => onChange({ ...options, [row.key]: v ?? options[row.key] })}
           />
         </div>
       ))}

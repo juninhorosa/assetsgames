@@ -17,10 +17,10 @@ export interface AssetExport {
   prompt: string;
   /** albedo/base image */
   image: string;
-  maps?: Partial<Record<MapType, string>>;
-  frames?: string[];
-  frameRects?: FrameRect[];
-  animation?: { name: string; fps: number; columns: number; rows: number };
+  maps?: Partial<Record<MapType, string>> | undefined;
+  frames?: string[] | undefined;
+  frameRects?: FrameRect[] | undefined;
+  animation?: { name: string; fps: number; columns: number; rows: number } | undefined;
 }
 
 function slug(name: string) {

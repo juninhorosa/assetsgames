@@ -45,10 +45,10 @@ export const MODE_LABELS: Record<AssetMode, string> = {
 
 export interface GenerationParams {
   mode: AssetMode;
-  animation?: string;
-  columns?: number;
-  rows?: number;
-  uiKind?: string;
+  animation?: string | undefined;
+  columns?: number | undefined;
+  rows?: number | undefined;
+  uiKind?: string | undefined;
 }
 
 export function detailWord(detail: number): string {
