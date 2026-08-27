@@ -306,9 +306,8 @@ export function frameSpriteSheetPng(
   const rows = Math.max(1, Math.round(opts.rows));
   const cw = Math.floor(img.width / cols);
   const ch = Math.floor(img.height / rows);
-  const cell = Math.max(32, Math.round(opts.canvas));
   const fill = Math.min(0.92, Math.max(0.3, opts.fill));
-  const margin = Math.round(cell * 0.06);
+
 
   // Bounds de cada célula, em coordenadas absolutas da imagem.
   const cells: (Bounds | null)[] = [];
