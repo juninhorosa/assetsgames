@@ -313,6 +313,33 @@ function Generator() {
     setRects([]);
     setRelief(null);
     setMotion3d(null);
+    setPivot(null);
+  }
+
+  const CONSISTENCY_RULE =
+    "Mantenha exatamente o mesmo personagem da imagem de referência: mesmas cores, roupas, " +
+    "acessórios, proporções e paleta. Altere apenas a pose, a ação e o ângulo de câmera pedidos. " +
+    "Fundo branco liso.";
+
+  /**
+   * Geração unificada. Com referência travada, usa edição guiada pela imagem do
+   * personagem (consistência entre ações e direções); sem referência, gera do zero.
+   */
+  async function runGeneration(promptText: string, ref: string | null): Promise<string> {
+    let out = "";
+    const onFrame = (dataUrl: string, final: boolean) => {
+      out = dataUrl;
+      setImage(dataUrl);
+      setIsFinal(final);
+    };
+    if (ref) {
+      const blob = await (await fetch(ref)).blob();
+      await streamEdit(blob, `${promptText}\n\n${CONSISTENCY_RULE}`, onFrame);
+    } else {
+      await streamGenerate({ prompt: promptText, size }, onFrame);
+    }
+    if (!out) throw new Error("A geração não retornou nenhuma imagem");
+    return out;
   }
 
   async function generate() {
@@ -325,10 +352,8 @@ function Generator() {
     setImage(null);
     resetDerived();
     try {
-      await streamGenerate({ prompt: finalPrompt, size }, (dataUrl, final) => {
-        setImage(dataUrl);
-        setIsFinal(final);
-      });
+      const out = await runGeneration(finalPrompt, null);
+      if (lockCharacter) setReference(out);
       if (!name.trim()) setName(prompt.trim().slice(0, 48));
       toast.success("Asset gerado");
     } catch (e) {
@@ -339,9 +364,110 @@ function Generator() {
   }
 
   /**
-   * Gera uma sheet por ação × direção selecionada, fatia os quadros e salva cada
-   * combinação na biblioteca (mesmo personagem, mesmo Style Profile).
+   * Executa (ou retoma) uma fila de lote. O cursor só avança depois do asset
+   * estar salvo, então fechar a aba no meio não perde o que já foi gerado.
    */
+  async function runQueue(initial: QueueState) {
+    cancelRef.current = false;
+    let state = initial;
+    saveQueue(state);
+    setPendingQueue(state);
+    let ref = state.reference ?? (lockCharacter ? reference : null);
+
+    try {
+      for (let i = state.cursor; i < state.jobs.length; i++) {
+        if (cancelRef.current) {
+          toast.info("Lote pausado — use “Retomar lote” quando quiser continuar");
+          setPendingQueue({ ...state });
+          return;
+        }
+        const job = state.jobs[i]!;
+        setBusy(`${job.label} (${i + 1}/${state.jobs.length})`);
+        setPackProgress({ done: i, total: state.jobs.length });
+        setIsFinal(false);
+        setImage(null);
+        resetDerived();
+
+        const out = await runGeneration(job.finalPrompt, ref);
+        if (!ref && lockCharacter) {
+          ref = out;
+          setReference(out);
+          state = { ...state, reference: out };
+        }
+
+        if (job.kind === "spritesheet") {
+          const cols = job.columns ?? 4;
+          const rws = job.rows ?? 2;
+          const img = await loadImage(out);
+          const sliced = sliceSheet(img, cols, rws);
+          setAnimation(job.action ?? animation);
+          setColumns(cols);
+          setRows(rws);
+          setFps(job.fps ?? 12);
+          setFrames(sliced.frames);
+          setRects(sliced.rects);
+          setCell({ w: sliced.cellWidth, h: sliced.cellHeight });
+
+          await saveAsset({
+            projectId: state.projectId,
+            name: job.assetName,
+            mode: "spritesheet",
+            prompt: job.prompt,
+            finalPrompt: job.finalPrompt,
+            params: {
+              mode: "spritesheet",
+              animation: job.action,
+              columns: cols,
+              rows: rws,
+              size: job.size,
+              view: job.view ?? state.profile.view,
+            },
+            image: out,
+            maps: {},
+            frames: sliced.frames,
+            animation: {
+              name: job.view ? `${job.action}_${job.view}` : (job.action ?? "clip"),
+              fps: job.fps ?? 12,
+              columns: cols,
+              rows: rws,
+              cellWidth: sliced.cellWidth,
+              cellHeight: sliced.cellHeight,
+              rects: sliced.rects,
+            },
+          });
+        } else {
+          await saveAsset({
+            projectId: state.projectId,
+            name: job.assetName,
+            mode: job.mode,
+            prompt: job.prompt,
+            finalPrompt: job.finalPrompt,
+            params: { ...params, size: job.size, view: job.view ?? state.profile.view },
+            image: out,
+            maps: {},
+            frames: [],
+          });
+        }
+
+        state = advanceQueue(state, i + 1);
+        setPackProgress({ done: i + 1, total: state.jobs.length });
+      }
+
+      clearQueue();
+      setPendingQueue(null);
+      await qc.invalidateQueries({ queryKey: ["assets", state.projectId] });
+      toast.success(`${state.jobs.length} assets salvos na biblioteca`);
+    } catch (e) {
+      saveQueue(state);
+      setPendingQueue({ ...state });
+      toast.error(`${(e as Error).message} — o lote ficou salvo, use “Retomar lote”.`);
+    } finally {
+      setBusy(null);
+      setPackProgress(null);
+    }
+  }
+
+  /** Uma sheet por ação × direção selecionada, tudo salvo na biblioteca. */
   async function generatePack() {
     if (!prompt.trim()) {
       toast.error("Descreva o personagem antes de gerar o pack");
@@ -359,86 +485,44 @@ function Generator() {
     const actions = ANIMATION_ACTIONS.filter((a) => packActions.includes(a.id));
     const set = findDirectionSet(directionSet);
     const views: (ViewKey | undefined)[] = set.views.length ? set.views : [undefined];
-    const jobs = actions.flatMap((action) => views.map((view) => ({ action, view })));
-
-    setPackProgress({ done: 0, total: jobs.length });
     const baseName = name.trim() || prompt.trim().slice(0, 32);
 
-    try {
-      for (let i = 0; i < jobs.length; i++) {
-        const { action, view } = jobs[i]!;
+    const jobs: QueueJob[] = actions.flatMap((action) =>
+      views.map((view) => {
         const viewLabel = view ? VIEW_LABELS[view] : null;
-        setBusy(
-          `Gerando ${action.label}${viewLabel ? ` · ${viewLabel}` : ""} (${i + 1}/${jobs.length})`,
-        );
-        setIsFinal(false);
-        setImage(null);
-        resetDerived();
-
-        const actionPrompt = buildPrompt(prompt, profile, {
-          mode: "spritesheet",
-          animation: action.id,
-          columns: action.columns,
-          rows: action.rows,
-          view,
-        });
-
-        let sheet = "";
-        await streamGenerate({ prompt: actionPrompt, size }, (dataUrl, final) => {
-          sheet = dataUrl;
-          setImage(dataUrl);
-          setIsFinal(final);
-        });
-        if (!sheet) throw new Error(`Falha ao gerar ${action.label}`);
-
-        const img = await loadImage(sheet);
-        const sliced = sliceSheet(img, action.columns, action.rows);
-        setAnimation(action.id);
-        setColumns(action.columns);
-        setRows(action.rows);
-        setFps(action.fps);
-        setFrames(sliced.frames);
-        setRects(sliced.rects);
-        setCell({ w: sliced.cellWidth, h: sliced.cellHeight });
-
-        await saveAsset({
-          projectId: project.id,
-          name: `${baseName} — ${action.label}${viewLabel ? ` — ${viewLabel}` : ""}`,
-          mode: "spritesheet",
+        return {
+          id: `${action.id}-${view ?? "base"}`,
+          kind: "spritesheet" as const,
+          label: `Gerando ${action.label}${viewLabel ? ` · ${viewLabel}` : ""}`,
           prompt,
-          finalPrompt: actionPrompt,
-          params: {
+          finalPrompt: buildPrompt(prompt, profile, {
             mode: "spritesheet",
             animation: action.id,
             columns: action.columns,
             rows: action.rows,
-            size,
-            view: view ?? profile.view,
-          },
-          image: sheet,
-          maps: {},
-          frames: sliced.frames,
-          animation: {
-            name: view ? `${action.id}_${view}` : action.id,
-            fps: action.fps,
-            columns: action.columns,
-            rows: action.rows,
-            cellWidth: sliced.cellWidth,
-            cellHeight: sliced.cellHeight,
-            rects: sliced.rects,
-          },
-        });
+            view,
+          }),
+          mode: "spritesheet" as AssetMode,
+          size,
+          assetName: `${baseName} — ${action.label}${viewLabel ? ` — ${viewLabel}` : ""}`,
+          view,
+          action: action.id,
+          columns: action.columns,
+          rows: action.rows,
+          fps: action.fps,
+        };
+      }),
+    );
 
-        setPackProgress({ done: i + 1, total: jobs.length });
-      }
-      await qc.invalidateQueries({ queryKey: ["assets", project.id] });
-      toast.success(`${jobs.length} sheets salvas na biblioteca`);
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(null);
-      setPackProgress(null);
-    }
+    await runQueue({
+      projectId: project.id,
+      baseName,
+      createdAt: new Date().toISOString(),
+      cursor: 0,
+      jobs,
+      profile,
+      reference: lockCharacter ? (reference ?? undefined) : undefined,
+    });
   }
 
   /** Gera o asset estático (sprite/model3d) em cada direção do conjunto e salva. */
@@ -456,49 +540,70 @@ function Generator() {
       toast.error("Escolha um conjunto de direções");
       return;
     }
-
-    setPackProgress({ done: 0, total: set.views.length });
     const baseName = name.trim() || prompt.trim().slice(0, 32);
 
+    const jobs: QueueJob[] = set.views.map((view) => ({
+      id: `dir-${view}`,
+      kind: "static" as const,
+      label: `Gerando ${VIEW_LABELS[view]}`,
+      prompt,
+      finalPrompt: buildPrompt(prompt, profile, { ...params, view }),
+      mode,
+      size,
+      assetName: `${baseName} — ${VIEW_LABELS[view]}`,
+      view,
+    }));
+
+    await runQueue({
+      projectId: project.id,
+      baseName,
+      createdAt: new Date().toISOString(),
+      cursor: 0,
+      jobs,
+      profile,
+      reference: lockCharacter ? (reference ?? undefined) : undefined,
+    });
+  }
+
+  /** Trim + pivô comum em todos os quadros, e recomposição da sheet. */
+  async function alignSequence() {
+    if (frames.length === 0) return;
+    setBusy("Alinhando quadros");
     try {
-      for (let i = 0; i < set.views.length; i++) {
-        const view = set.views[i]!;
-        setBusy(`Gerando ${VIEW_LABELS[view]} (${i + 1}/${set.views.length})`);
-        setIsFinal(false);
-        setImage(null);
-        resetDerived();
-
-        const viewPrompt = buildPrompt(prompt, profile, { ...params, view });
-        let out = "";
-        await streamGenerate({ prompt: viewPrompt, size }, (dataUrl, final) => {
-          out = dataUrl;
-          setImage(dataUrl);
-          setIsFinal(final);
-        });
-        if (!out) throw new Error(`Falha ao gerar ${VIEW_LABELS[view]}`);
-
-        await saveAsset({
-          projectId: project.id,
-          name: `${baseName} — ${VIEW_LABELS[view]}`,
-          mode,
-          prompt,
-          finalPrompt: viewPrompt,
-          params: { ...params, size, view },
-          image: out,
-          maps: {},
-          frames: [],
-        });
-        setPackProgress({ done: i + 1, total: set.views.length });
-      }
-      await qc.invalidateQueries({ queryKey: ["assets", project.id] });
-      toast.success(`${set.views.length} direções salvas na biblioteca`);
+      const aligned = await alignFrames(frames, { ...DEFAULT_ALIGN_OPTIONS, pivot: pivotMode });
+      setFrames(aligned.frames);
+      setPivot(aligned.pivot);
+      const sheet = await composeSheetFromDataUrls(aligned.frames, columns);
+      setImage(sheet.dataUrl);
+      setIsFinal(true);
+      setRects(sheet.rects);
+      setColumns(sheet.columns);
+      setRows(sheet.rows);
+      setCell({ w: sheet.cellWidth, h: sheet.cellHeight });
+      toast.success(`${aligned.frames.length} quadros alinhados no pivô`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setBusy(null);
-      setPackProgress(null);
     }
   }
+
+  /** Aplica a sequência editada (ordem/remoções) recompondo a sheet. */
+  async function applyFrameEdits(next: string[]) {
+    setFrames(next);
+    try {
+      const sheet = await composeSheetFromDataUrls(next, columns);
+      setImage(sheet.dataUrl);
+      setIsFinal(true);
+      setRects(sheet.rects);
+      setColumns(sheet.columns);
+      setRows(sheet.rows);
+      setCell({ w: sheet.cellWidth, h: sheet.cellHeight });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
 
 
 
