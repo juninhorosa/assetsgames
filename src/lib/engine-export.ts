@@ -1,4 +1,5 @@
 import { zipSync, strToU8 } from "fflate";
+import { buildAgentGuide, buildManifest } from "./ai-pack";
 import { dataUrlToBytes, type FrameRect, type MapType } from "./image-pipeline";
 import type { AssetMode, StyleProfile } from "./style-profile";
 
