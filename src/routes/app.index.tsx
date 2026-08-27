@@ -1034,7 +1034,7 @@ function Generator() {
               )}
               {packProgress
                 ? `Gerando pack ${packProgress.done}/${packProgress.total}`
-                : `Gerar pack (${packActions.length} ações)`}
+                : `Gerar pack (${packActions.length} ações × ${findDirectionSet(directionSet).views.length || 1} direções)`}
             </Button>
           </section>
         )}
