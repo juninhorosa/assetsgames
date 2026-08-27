@@ -1088,6 +1088,28 @@ function Generator() {
                 <Download className="size-4" />
                 Baixar .glb
               </Button>
+              {mode === "spritesheet" && (
+                <>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={buildMotion3d}
+                    disabled={!frames.length || busy !== null}
+                  >
+                    <Boxes className="size-4" />
+                    Gerar movimento 3D ({frames.length || 0} quadros)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={downloadMotionGlb}
+                    disabled={!motion3d || busy !== null}
+                  >
+                    <Download className="size-4" />
+                    Baixar .glb animado
+                  </Button>
+                </>
+              )}
             </>
           )}
           {mode === "texture" && (
