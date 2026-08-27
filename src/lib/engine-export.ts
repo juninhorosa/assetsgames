@@ -389,17 +389,43 @@ export function buildEngineZip(
   }
 
   files["forge3d.json"] = strToU8(JSON.stringify(metadata(asset, engine ?? "unity"), null, 2));
+  files["forge3d.preset.json"] = strToU8(
+    JSON.stringify(
+      engine
+        ? preset
+        : (["unity", "unreal", "godot"] as Engine[]).reduce<Record<string, ExportPreset>>(
+            (acc, e) => {
+              acc[e] = presetFor(e);
+              return acc;
+            },
+            {},
+          ),
+      null,
+      2,
+    ),
+  );
+
+  // Cada script nasce com o preset da sua própria engine, mesmo no pacote para IA.
+  function presetFor(e: Engine): ExportPreset {
+    return resolvePreset(e, {
+      pixelArt: asset.style.style === "pixel-art",
+      tiling: asset.mode === "texture",
+      pivot: options.pivot,
+    });
+  }
 
   if (engine === "unity" || engine === null) {
-    files[`Forge3D_${id}_Importer.cs`] = strToU8(unityImporter(asset));
+    files[`Forge3D_${id}_Importer.cs`] = strToU8(unityImporter(asset, presetFor("unity")));
   }
   if (engine === "unreal" || engine === null) {
-    files[`import_${id}.py`] = strToU8(unrealScript(asset));
+    files[`import_${id}.py`] = strToU8(unrealScript(asset, presetFor("unreal")));
   }
   if (engine === "godot" || engine === null) {
-    files[`${id}_material.tres`] = strToU8(godotMaterial(asset));
-    if (asset.animation) files[`${id}_frames.tres`] = strToU8(godotSpriteFrames(asset));
+    const godot = presetFor("godot");
+    files[`${id}_material.tres`] = strToU8(godotMaterial(asset, godot));
+    if (asset.animation) files[`${id}_frames.tres`] = strToU8(godotSpriteFrames(asset, godot));
   }
+
 
   const cell = asset.frameRects?.[0];
   const manifest = buildManifest({
