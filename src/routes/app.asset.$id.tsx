@@ -28,6 +28,23 @@ import {
 import { fetchAsset, fetchProjects, signedUrl } from "@/lib/assets-repo";
 
 export const Route = createFileRoute("/app/asset/$id")({
+  head: () => ({
+    meta: [
+      { title: "Detalhes do asset — Forge3D" },
+      {
+        name: "description",
+        content:
+          "Inspecione o asset gerado: grade de quadros, FPS, mapas PBR, relevo 3D e pacotes de exportação para Unity, Unreal e Godot.",
+      },
+      { property: "og:title", content: "Detalhes do asset — Forge3D" },
+      {
+        property: "og:description",
+        content: "Metadados de importação, preview de animação e downloads deste asset.",
+      },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: AssetDetail,
 });
 
