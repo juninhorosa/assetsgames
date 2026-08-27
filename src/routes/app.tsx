@@ -30,9 +30,15 @@ export const Route = createFileRoute("/app")({
 });
 
 function AppLayout() {
-  const { session, loading } = useAuth();
+  const { session, user, loading } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    queryFn: () => fetchIsAdmin(user!.id),
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!loading && !session) navigate({ to: "/auth" });
@@ -53,7 +59,9 @@ function AppLayout() {
     { to: "/app/library", label: "Biblioteca", icon: Images, exact: false },
     { to: "/app/usage", label: "Uso", icon: Gauge, exact: false },
     { to: "/app/settings/keys", label: "API keys", icon: KeyRound, exact: false },
+    ...(isAdmin ? [{ to: "/app/admin", label: "Admin", icon: ShieldCheck, exact: false }] : []),
   ];
+
 
   return (
     <div className="flex min-h-screen flex-col">
