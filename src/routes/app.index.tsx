@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Bot,
   Box,
+  Boxes,
   Download,
   FolderPlus,
   ListChecks,
@@ -41,6 +43,7 @@ import { PbrControls } from "@/components/studio/PbrControls";
 import { SpritePlayer } from "@/components/studio/SpritePlayer";
 import { MaterialPreview3D } from "@/components/studio/MaterialPreview3D";
 import { Model3DPreview } from "@/components/studio/Model3DPreview";
+import { Model3DAnimator } from "@/components/studio/Model3DAnimator";
 
 import {
   ANIMATION_ACTIONS,
@@ -69,9 +72,13 @@ import {
 } from "@/lib/image-pipeline";
 import {
   DEFAULT_RELIEF_OPTIONS,
+  animatedGlbBytes,
   buildRelief,
+  exportAnimatedGlb,
   exportGlb,
+  glbBytes,
   type MeshData,
+  type MotionFrame,
   type ReliefOptions,
 } from "@/lib/mesh-3d";
 import { streamEdit, streamGenerate } from "@/lib/stream-image";
@@ -195,6 +202,7 @@ function Generator() {
 
   const [relief, setRelief] = useState<MeshData | null>(null);
   const [reliefOpts, setReliefOpts] = useState<ReliefOptions>(DEFAULT_RELIEF_OPTIONS);
+  const [motion3d, setMotion3d] = useState<MotionFrame[] | null>(null);
 
   const params = { mode, animation, columns, rows, uiKind };
   const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind]);
@@ -232,6 +240,7 @@ function Generator() {
     setFrames([]);
     setRects([]);
     setRelief(null);
+    setMotion3d(null);
   }
 
   async function generate() {
@@ -484,26 +493,114 @@ function Generator() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function exportEngine(engine: Engine) {
+  /** Stop-motion 3D: uma malha de relevo por quadro da animação. */
+  async function buildMotion3d() {
+    if (!frames.length) {
+      toast.error("Fatie os quadros da sheet primeiro");
+      return;
+    }
+    setBusy("Gerando movimento 3D");
+    try {
+      const built: MotionFrame[] = [];
+      for (let i = 0; i < frames.length; i++) {
+        const raw = await loadImage(frames[i]!);
+        const source = hasAlpha(raw) ? frames[i]! : removeBackground(raw);
+        const img = source === frames[i] ? raw : await loadImage(source);
+        built.push({ mesh: buildRelief(img, reliefOpts), albedo: source });
+        setBusy(`Gerando movimento 3D (${i + 1}/${frames.length})`);
+      }
+      setMotion3d(built);
+      toast.success(`${built.length} quadros 3D prontos`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadMotionGlb() {
+    if (!motion3d) return;
+    const id = slugify(name || "asset");
+    setBusy("Exportando GLB animado");
+    try {
+      const blob = await exportAnimatedGlb(motion3d, `${id}_${animation}`, fps);
+      downloadBlob(blob, `${id}_${animation}_animated.glb`);
+      toast.success("GLB animado exportado");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Coleta as malhas GLB (estática, sequência e clip animado) para o pacote. */
+  async function collectModels(id: string) {
+    const models: Record<string, Uint8Array> = {};
+    if (relief && image) models[`models/${id}.glb`] = await glbBytes(relief, image, id);
+    if (motion3d) {
+      for (let i = 0; i < motion3d.length; i++) {
+        const frame = motion3d[i]!;
+        const label = String(i).padStart(2, "0");
+        models[`models/frames/${id}_${label}.glb`] = await glbBytes(
+          frame.mesh,
+          frame.albedo,
+          `${id}_${label}`,
+        );
+      }
+      models[`models/${id}_animated.glb`] = await animatedGlbBytes(
+        motion3d,
+        `${id}_${animation}`,
+        fps,
+      );
+    }
+    return models;
+  }
+
+  async function exportEngine(engine: Engine | null) {
     if (!image) return;
-    const zip = buildEngineZip(
-      {
-        name: name.trim() || "asset",
-        mode,
-        style: profile,
-        prompt: finalPrompt,
-        image,
-        maps,
-        frames,
-        frameRects: rects,
-        animation:
-          mode === "spritesheet" && frames.length
-            ? { name: animation, fps, columns, rows }
+    const id = slugify(name || "asset");
+    setBusy("Empacotando");
+    try {
+      const models = await collectModels(id);
+      const zip = buildEngineZip(
+        {
+          name: name.trim() || "asset",
+          mode,
+          style: profile,
+          prompt: finalPrompt,
+          image,
+          maps,
+          frames,
+          frameRects: rects,
+          animation:
+            mode === "spritesheet" && frames.length
+              ? {
+                  name: animation,
+                  label: findAction(animation)?.label,
+                  fps,
+                  columns,
+                  rows,
+                }
+              : undefined,
+          models,
+          motion3d: motion3d
+            ? {
+                fps,
+                frameCount: motion3d.length,
+                depth: reliefOpts.depth,
+                segments: reliefOpts.segments,
+              }
             : undefined,
-      },
-      engine,
-    );
-    downloadBlob(zip, `${slugify(name || "asset")}-${engine}.zip`);
+        },
+        engine,
+      );
+      downloadBlob(zip, `${id}-${engine ?? "ai-pack"}.zip`);
+      toast.success(engine ? `Pacote ${engine} pronto` : "Pacote para IA pronto");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -861,6 +958,15 @@ function Generator() {
           </section>
         )}
 
+        {motion3d && (
+          <section className="space-y-3">
+            <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+              Movimento 3D — {findAction(animation)?.label ?? animation}
+            </h2>
+            <Model3DAnimator frames={motion3d} initialFps={fps} />
+          </section>
+        )}
+
         {relief && image && (
           <section className="space-y-3">
             <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
@@ -921,7 +1027,7 @@ function Generator() {
               Fatiar {columns}×{rows} quadros
             </Button>
           )}
-          {mode === "model3d" && (
+          {(mode === "model3d" || mode === "spritesheet") && (
             <>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -993,6 +1099,28 @@ function Generator() {
                 <Download className="size-4" />
                 Baixar .glb
               </Button>
+              {mode === "spritesheet" && (
+                <>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={buildMotion3d}
+                    disabled={!frames.length || busy !== null}
+                  >
+                    <Boxes className="size-4" />
+                    Gerar movimento 3D ({frames.length || 0} quadros)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={downloadMotionGlb}
+                    disabled={!motion3d || busy !== null}
+                  >
+                    <Download className="size-4" />
+                    Baixar .glb animado
+                  </Button>
+                </>
+              )}
             </>
           )}
           {mode === "texture" && (
@@ -1055,6 +1183,10 @@ function Generator() {
                   {ENGINE_LABELS[engine]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuItem onClick={() => exportEngine(null)}>
+                <Bot className="size-4" />
+                Pacote para IA (manifesto)
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </section>

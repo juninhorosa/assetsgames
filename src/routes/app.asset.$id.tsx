@@ -107,7 +107,7 @@ function AssetDetail() {
   const style: StyleProfile = { ...DEFAULT_STYLE_PROFILE, ...(project?.style_profile ?? {}) };
   const anim = animations[0];
 
-  function exportEngine(engine: Engine) {
+  function exportEngine(engine: Engine | null) {
     if (!image) return;
     const zip = buildEngineZip(
       {
@@ -118,6 +118,7 @@ function AssetDetail() {
         image,
         maps,
         frames,
+        frameRects: anim?.frame_data.rects ?? [],
         animation:
           anim && anim.frame_data.columns && anim.frame_data.rows
             ? {
@@ -130,7 +131,7 @@ function AssetDetail() {
       },
       engine,
     );
-    downloadBlob(zip, `${slugify(asset.name)}-${engine}.zip`);
+    downloadBlob(zip, `${slugify(asset.name)}-${engine ?? "ai-pack"}.zip`);
   }
 
   return (
@@ -174,6 +175,9 @@ function AssetDetail() {
                   {ENGINE_LABELS[engine]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuItem onClick={() => exportEngine(null)}>
+                Pacote para IA (manifesto)
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
