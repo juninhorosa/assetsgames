@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiSpriteSheetGeneratorRouteImport } from './routes/ai-sprite-sheet-generator'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as McpRouteImport } from './routes/mcp'
@@ -33,6 +34,11 @@ import { Route as ApiPublicForge3dGenerateRouteImport } from './routes/api/publi
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiSpriteSheetGeneratorRoute = AiSpriteSheetGeneratorRouteImport.update({
+  id: '/ai-sprite-sheet-generator',
+  path: '/ai-sprite-sheet-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -138,6 +144,7 @@ const ApiPublicForge3dGenerateRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-sprite-sheet-generator': typeof AiSpriteSheetGeneratorRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-sprite-sheet-generator': typeof AiSpriteSheetGeneratorRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -182,6 +190,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-sprite-sheet-generator': typeof AiSpriteSheetGeneratorRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ai-sprite-sheet-generator'
     | '/app'
     | '/auth'
     | '/mcp'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ai-sprite-sheet-generator'
     | '/auth'
     | '/mcp'
     | '/sitemap.xml'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ai-sprite-sheet-generator'
     | '/app'
     | '/auth'
     | '/mcp'
@@ -272,6 +284,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiSpriteSheetGeneratorRoute: typeof AiSpriteSheetGeneratorRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-sprite-sheet-generator': {
+      id: '/ai-sprite-sheet-generator'
+      path: '/ai-sprite-sheet-generator'
+      fullPath: '/ai-sprite-sheet-generator'
+      preLoaderRoute: typeof AiSpriteSheetGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -452,6 +472,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiSpriteSheetGeneratorRoute: AiSpriteSheetGeneratorRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   McpRoute: McpRoute,
