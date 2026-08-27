@@ -186,6 +186,7 @@ export function buildManifest(input: ManifestInput) {
                   frameCount: motion.frameCount,
                   depth: motion.depth,
                   segments: motion.segments,
+                  styleVariation: motion.style ?? null,
                 },
               }
             : {}),
