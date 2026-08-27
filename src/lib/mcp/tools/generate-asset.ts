@@ -161,21 +161,31 @@ export default defineTool({
       });
       const raw = await generatePngBase64(finalPrompt, size);
       const framed = input.frame !== false && shouldFrameMode(mode);
-      const frameSize = input.frame_size ?? (action ? 128 : DEFAULT_SERVER_FRAMING.canvas);
+      const targetBody = input.target_body_height ?? null;
+      let frameSize = input.frame_size ?? (action ? 128 : DEFAULT_SERVER_FRAMING.canvas);
       let pngBytes = base64ToBytes(raw);
       let sheetInfo: { cell: number; bodyHeight: number; groundLine: number } | null = null;
       if (framed && action) {
         const sheet = frameSpriteSheetPng(pngBytes, {
           ...DEFAULT_SHEET_FRAMING,
           canvas: frameSize,
+          ...(targetBody ? { targetBodyHeight: targetBody, minCanvas: 32, maxCanvas: 1024 } : {}),
           columns: action.columns,
           rows: action.rows,
         });
         pngBytes = sheet.png;
+        frameSize = sheet.cell;
         sheetInfo = { cell: sheet.cell, bodyHeight: sheet.bodyHeight, groundLine: sheet.groundLine };
       } else if (framed) {
-        pngBytes = frameAssetPng(pngBytes, { ...DEFAULT_SERVER_FRAMING, canvas: frameSize });
+        const out = frameAssetPngDetailed(pngBytes, {
+          ...DEFAULT_SERVER_FRAMING,
+          canvas: frameSize,
+          ...(targetBody ? { targetBodyHeight: targetBody, maxCanvas: 2048 } : {}),
+        });
+        pngBytes = out.png;
+        frameSize = out.canvas;
       }
+
       const b64 = framed ? bytesToBase64(pngBytes) : raw;
 
 
