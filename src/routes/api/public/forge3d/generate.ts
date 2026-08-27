@@ -13,11 +13,14 @@ import {
 import { estimateCredits } from "@/lib/pricing";
 import {
   DEFAULT_SERVER_FRAMING,
+  DEFAULT_SHEET_FRAMING,
   base64ToBytes,
   bytesToBase64,
   frameAssetPng,
+  frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
+
 
 const MAX_JOBS = 8;
 
