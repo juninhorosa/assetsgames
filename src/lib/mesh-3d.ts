@@ -92,8 +92,8 @@ export function buildRelief(img: HTMLImageElement, options: ReliefOptions): Mesh
   const segments = Math.max(8, Math.min(256, Math.round(opts.segments)));
   const { height, mask, size } = sample(img, segments, opts);
 
-  const half = opts.depth / 2;
-  void half;
+
+
   const positions: number[] = [];
   const uvs: number[] = [];
 
