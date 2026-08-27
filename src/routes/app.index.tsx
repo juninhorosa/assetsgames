@@ -1043,6 +1043,28 @@ function Generator() {
           {(mode === "model3d" || mode === "spritesheet") && (
             <>
               <div className="space-y-2">
+                <Label>Variação de estilo 3D</Label>
+                <Select
+                  value={model3dStyle}
+                  onValueChange={(v) => selectModel3dStyle(v as Model3dStyleKey)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MODEL3D_STYLES.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.label} — {s.hint}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Muda só superfície e shading. Sentido ({VIEW_LABELS[profile.view ?? "side-right"]}),
+                  volume e silhueta ficam travados.
+                </p>
+              </div>
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Profundidade</Label>
                   <span className="font-mono text-[11px] text-primary">
