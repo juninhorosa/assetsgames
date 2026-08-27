@@ -139,7 +139,15 @@ export default defineTool({
         uiKind: input.ui_kind,
         model3dStyle: input.model3d_style,
       });
-      const b64 = await generatePngBase64(finalPrompt, size);
+      const raw = await generatePngBase64(finalPrompt, size);
+      const framed = input.frame !== false && shouldFrameMode(mode);
+      const frameSize = input.frame_size ?? DEFAULT_SERVER_FRAMING.canvas;
+      let pngBytes = base64ToBytes(raw);
+      if (framed) {
+        pngBytes = frameAssetPng(pngBytes, { ...DEFAULT_SERVER_FRAMING, canvas: frameSize });
+      }
+      const b64 = framed ? bytesToBase64(pngBytes) : raw;
+
 
       const viewLabel = view ? VIEW_LABELS[view] : null;
       const name = [
