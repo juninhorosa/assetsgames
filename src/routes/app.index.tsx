@@ -71,8 +71,11 @@ import {
   type StyleProfile,
 } from "@/lib/style-profile";
 import {
+  DEFAULT_ALIGN_OPTIONS,
   DEFAULT_PBR_OPTIONS,
   MAP_LABELS,
+  alignFrames,
+  composeSheetFromDataUrls,
   derivePbrMaps,
   loadImage,
   removeBackground,
@@ -80,7 +83,9 @@ import {
   type FrameRect,
   type MapType,
   type PbrOptions,
+  type PivotMode,
 } from "@/lib/image-pipeline";
+
 import {
   DEFAULT_RELIEF_OPTIONS,
   animatedGlbBytes,
