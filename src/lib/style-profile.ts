@@ -217,9 +217,17 @@ export function detailWord(detail: number): string {
 }
 
 /**
+ * Trava de enquadramento — mesma escala e margem em todos os assets do projeto,
+ * para que o recorte (trim) produza sempre saídas do mesmo tamanho.
+ */
+export const FRAMING_LOCK =
+  "Framing lock: square composition, subject perfectly centered horizontally, standing on an invisible baseline at the same height in every image, the subject occupies exactly 85% of the frame height with a constant empty safe margin of about 7% on all four sides, nothing touching or cropped by the frame edges, identical zoom level, identical subject scale and identical distance from camera in every image so all assets can be trimmed to the same size.";
+
+/**
  * Style profile + mode template = the consistency mechanism.
  * The same profile is injected into every prompt of a project.
  */
+
 export function buildPrompt(
   userPrompt: string,
   profile: StyleProfile,
