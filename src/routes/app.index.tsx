@@ -956,6 +956,15 @@ function Generator() {
           </section>
         )}
 
+        {motion3d && (
+          <section className="space-y-3">
+            <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+              Movimento 3D — {findAction(animation)?.label ?? animation}
+            </h2>
+            <Model3DAnimator frames={motion3d} initialFps={fps} />
+          </section>
+        )}
+
         {relief && image && (
           <section className="space-y-3">
             <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
