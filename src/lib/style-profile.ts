@@ -75,16 +75,23 @@ export function buildPrompt(
       const cols = params.columns ?? 4;
       const rows = params.rows ?? 2;
       const frames = cols * rows;
+      const actionId = params.animation ?? "idle";
+      const action = ANIMATION_ACTIONS.find((a) => a.id === actionId);
+      const motion = action
+        ? action.motion
+        : `${actionId}: each cell is one sequential keyframe of that motion`;
       return [
-        `A game sprite sheet of: ${userPrompt}.`,
-        `Render exactly ${frames} animation frames laid out in a strict uniform grid of ${cols} columns by ${rows} rows.`,
-        `The animation is "${params.animation ?? "idle"}": each cell is one sequential keyframe of that motion, same character, same scale, same camera angle, centered inside its cell.`,
-        `Uniform cell size, no gaps, no borders, no numbers, no captions, no drop shadow outside the cell.`,
+        `A game character sprite sheet of: ${userPrompt}.`,
+        `Render exactly ${frames} animation frames laid out in a strict uniform grid of ${cols} columns by ${rows} rows, read left to right, top to bottom.`,
+        `The animation is "${actionId}" — ${motion}.`,
+        `Every cell shows the same character with identical proportions, identical outfit, identical colors, identical scale and identical camera angle, centered inside its cell, feet on the same baseline; only the pose changes between cells.`,
+        `Uniform cell size, no gaps, no borders, no numbers, no captions, no onion-skin ghosting, no drop shadow outside the cell.`,
         `Solid flat pure white background so it can be keyed out.`,
         styleLine + ".",
         "Side-view full body, consistent proportions across every frame." + extra,
       ].join(" ");
     }
+
     case "texture":
       return [
         `A seamless tileable PBR albedo texture of: ${userPrompt}.`,
