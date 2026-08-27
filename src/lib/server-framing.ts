@@ -283,7 +283,9 @@ export function frameSpriteSheetPng(
   const reference = heights.length ? percentile(heights, opts.referencePercentile) : ch;
   let scale = (cell * fill) / Math.max(1, reference);
   // Clamp global: nenhum quadro pode estourar a célula (mantém escala única).
-  const usable = cell - margin * 2;
+  // Usa a célula inteira como limite para que quadros extremos (arma erguida,
+  // salto) apenas invadam a margem em vez de encolher todo o conjunto.
+  const usable = cell - 2;
   for (const b of cells) {
     if (!b) continue;
     scale = Math.min(scale, usable / b.w, usable / b.h);
