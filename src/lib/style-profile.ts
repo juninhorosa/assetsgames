@@ -217,9 +217,17 @@ export function detailWord(detail: number): string {
 }
 
 /**
+ * Trava de enquadramento — mesma escala e margem em todos os assets do projeto,
+ * para que o recorte (trim) produza sempre saídas do mesmo tamanho.
+ */
+export const FRAMING_LOCK =
+  "Framing lock: square composition, subject perfectly centered horizontally, standing on an invisible baseline at the same height in every image, the subject occupies exactly 85% of the frame height with a constant empty safe margin of about 7% on all four sides, nothing touching or cropped by the frame edges, identical zoom level, identical subject scale and identical distance from camera in every image so all assets can be trimmed to the same size.";
+
+/**
  * Style profile + mode template = the consistency mechanism.
  * The same profile is injected into every prompt of a project.
  */
+
 export function buildPrompt(
   userPrompt: string,
   profile: StyleProfile,
@@ -228,6 +236,8 @@ export function buildPrompt(
   const styleLine = `${STYLE_PROMPTS[profile.style]}, color palette: ${profile.palette}, ${detailWord(profile.detail)}`;
   const extra = profile.extra?.trim() ? ` Art direction notes: ${profile.extra.trim()}.` : "";
   const view = `Camera and orientation lock: ${viewLine(profile, params.view)}.`;
+  const framing = FRAMING_LOCK;
+
 
   switch (params.mode) {
     case "spritesheet": {
@@ -245,6 +255,7 @@ export function buildPrompt(
         `The animation is "${actionId}" — ${motion}.`,
         `Every cell shows the same character with identical proportions, identical outfit, identical colors, identical scale and identical camera angle, centered inside its cell, feet on the same baseline; only the pose changes between cells.`,
         `Uniform cell size, no gaps, no borders, no numbers, no captions, no onion-skin ghosting, no drop shadow outside the cell.`,
+        `Inside every cell the character keeps the same scale and a constant empty safe margin around it (about 7% of the cell), never touching or crossing the cell edges, so all frames trim to the same size.`,
         `Solid flat pure white background so it can be keyed out.`,
         styleLine + ".",
         view,
@@ -264,6 +275,7 @@ export function buildPrompt(
       return [
         `A single game UI ${params.uiKind ?? "icon"}: ${userPrompt}.`,
         "Centered, isolated on a solid flat pure white background, no text, no watermark, crisp clean edges suitable for alpha cut-out, subtle inner bevel and readable silhouette.",
+        framing,
         styleLine + "." + extra,
       ].join(" ");
     case "model3d": {
@@ -272,7 +284,8 @@ export function buildPrompt(
         `A single game asset for 3D conversion: ${userPrompt}.`,
         "Strict orthographic projection, perfectly centered and axis-aligned, no perspective distortion, no camera tilt.",
         "Even diffuse lighting with soft self-shading that reads as volume: brighter where the surface faces the viewer, darker in recesses and cavities, so luminance can be used as a depth map.",
-        "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out, subject fills the frame.",
+        "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out.",
+        framing,
         `Style variation: ${variant.prompt}.`,
         "The style variation only changes surface, shading and material treatment — keep the exact same subject, the same proportions, the same volume distribution and the same crisp readable silhouette, with the outline unbroken and no part of the shape cropped or dissolved.",
         styleLine + ".",
@@ -284,9 +297,11 @@ export function buildPrompt(
       return [
         `A single game asset sprite of: ${userPrompt}.`,
         "One subject, centered, full body, isolated on a solid flat pure white background, no text, no props outside the subject, clean readable silhouette suitable for alpha cut-out.",
+        framing,
         styleLine + ".",
         view + extra,
       ].join(" ");
+
   }
 }
 

@@ -13,7 +13,9 @@ import {
   Package,
   PlayCircle,
   Save,
+  Crop,
   Scissors,
+
   Sparkles,
   Wand2,
   X,
@@ -74,13 +76,17 @@ import {
 } from "@/lib/style-profile";
 import {
   DEFAULT_ALIGN_OPTIONS,
+  DEFAULT_FRAMING_OPTIONS,
   DEFAULT_PBR_OPTIONS,
   MAP_LABELS,
   alignFrames,
   composeSheetFromDataUrls,
   derivePbrMaps,
   loadImage,
+  normalizeFraming,
+  normalizeFramingBatch,
   removeBackground,
+
   sliceSheet,
   type FrameRect,
   type MapType,
@@ -641,6 +647,45 @@ function Generator() {
       setBusy(null);
     }
   }
+
+  /** Normaliza o enquadramento: mesma escala, mesma margem e mesmo tamanho de saída. */
+  async function normalizeFrame() {
+    if (!image) return;
+    setBusy("Enquadrando asset");
+    try {
+      const opts = { ...DEFAULT_FRAMING_OPTIONS, pivot: pivotMode };
+      if (frames.length > 0) {
+        const raw = await Promise.all(
+          frames.map(async (f) => {
+            const img = await loadImage(f);
+            return hasAlpha(img) ? f : removeBackground(img);
+          }),
+        );
+        const framed = await normalizeFramingBatch(raw, opts);
+        setFrames(framed);
+        const sheet = await composeSheetFromDataUrls(framed, columns);
+        setImage(sheet.dataUrl);
+        setIsFinal(true);
+        setRects(sheet.rects);
+        setColumns(sheet.columns);
+        setRows(sheet.rows);
+        setCell({ w: sheet.cellWidth, h: sheet.cellHeight });
+        toast.success(`${framed.length} quadros enquadrados em ${opts.canvas}px`);
+      } else {
+        const img = await loadImage(image);
+        const source = hasAlpha(img) ? img : await loadImage(removeBackground(img));
+        setImage(normalizeFraming(source, opts));
+        setIsFinal(true);
+        toast.success(`Enquadrado em ${opts.canvas}×${opts.canvas}px`);
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+
 
   async function derive() {
     if (!image) return;
@@ -1414,6 +1459,21 @@ function Generator() {
             <Scissors className="size-4" />
             Remover fundo (alpha)
           </Button>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={normalizeFrame}
+            disabled={!image || busy !== null}
+          >
+            <Crop className="size-4" />
+            Enquadrar (tamanho único)
+          </Button>
+          <p className="text-[11px] text-muted-foreground">
+            Recorta o alpha e reescala o sujeito para ocupar sempre a mesma fração de uma tela de{" "}
+            {DEFAULT_FRAMING_OPTIONS.canvas}×{DEFAULT_FRAMING_OPTIONS.canvas}px, no mesmo pivô — todos
+            os assets saem com o mesmo tamanho e margem.
+          </p>
+
           {mode === "spritesheet" && (
             <Button
               variant="secondary"
