@@ -106,6 +106,23 @@ import {
 } from "@/lib/assets-repo";
 
 export const Route = createFileRoute("/app/")({
+  head: () => ({
+    meta: [
+      { title: "Estúdio de criação de assets — Forge3D" },
+      {
+        name: "description",
+        content:
+          "Gere sprites, sprite sheets animados em várias direções, texturas PBR e relevos 3D com o Style Profile do seu projeto.",
+      },
+      { property: "og:title", content: "Estúdio de criação de assets — Forge3D" },
+      {
+        property: "og:description",
+        content: "Prompt, preview, refino e exportação por engine no estúdio do Forge3D.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Generator,
 });
 
