@@ -324,8 +324,27 @@ export function frameSpriteSheetPng(
   }
 
   const heights = cells.filter((b): b is Bounds => !!b).map((b) => b.h);
-  const reference = heights.length ? percentile(heights, opts.referencePercentile) : ch;
-  let scale = (cell * fill) / Math.max(1, reference);
+  const reference = Math.max(1, heights.length ? percentile(heights, opts.referencePercentile) : ch);
+
+  // Fator de escala por unidade de célula: a escala final é sempre
+  // proporcional ao lado da célula, então o mesmo fator vale para qualquer
+  // tamanho e o alinhamento entre ações (idle/attack) não muda.
+  const scalePerCell = (() => {
+    let k = fill / reference;
+    for (const b of cells) {
+      if (!b) continue;
+      k = Math.min(k, 1 / b.w, 1 / b.h);
+    }
+    return k;
+  })();
+
+  let cell = Math.max(32, Math.round(opts.canvas));
+  if (opts.targetBodyHeight && opts.targetBodyHeight > 0) {
+    cell = clampCanvas(opts.targetBodyHeight / (scalePerCell * reference), opts, 32);
+  }
+  const margin = Math.round(cell * 0.06);
+
+  let scale = (cell * fill) / reference;
   // Clamp global: nenhum quadro pode estourar a célula (mantém escala única).
   // Usa a célula inteira como limite para que quadros extremos (arma erguida,
   // salto) apenas invadam a margem em vez de encolher todo o conjunto.
@@ -334,6 +353,7 @@ export function frameSpriteSheetPng(
     if (!b) continue;
     scale = Math.min(scale, usable / b.w, usable / b.h);
   }
+
 
   const outW = cell * cols;
   const outH = cell * rows;
