@@ -154,8 +154,7 @@ export function buildPrompt(
         "Strict orthographic front view, perfectly centered and axis-aligned, no perspective distortion, no camera tilt.",
         "Even diffuse lighting with soft self-shading that reads as volume: brighter where the surface faces the viewer, darker in recesses and cavities, so luminance can be used as a depth map.",
         "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out, clean readable silhouette, subject fills the frame.",
-        styleLine + ".",
-        view + extra,
+        styleLine + "." + extra,
       ].join(" ");
     case "sprite":
     default:
