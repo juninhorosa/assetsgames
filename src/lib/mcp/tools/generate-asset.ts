@@ -174,6 +174,7 @@ export default defineTool({
             ...(action ? { animation: action.id, columns: action.columns, rows: action.rows } : {}),
             ...(input.model3d_style ? { model3dStyle: input.model3d_style } : {}),
             ...(input.ui_kind ? { uiKind: input.ui_kind } : {}),
+            ...(framed ? { framed: true, frameSize, pivot: "bottom-center" } : {}),
             source: "mcp",
           } as unknown as never,
           metadata: { frameCount: action ? action.columns * action.rows : 0 } as unknown as never,
@@ -186,7 +187,8 @@ export default defineTool({
       const path = `${uid}/${projectId}/${assetId}/source.png`;
       const { error: upErr } = await supabase.storage
         .from("assets")
-        .upload(path, base64ToBytes(b64), { contentType: "image/png", upsert: true });
+        .upload(path, pngBytes, { contentType: "image/png", upsert: true });
+
       if (upErr) throw new ToolError(upErr.message);
       await supabase.from("assets").update({ storage_path: path }).eq("id", assetId);
 
