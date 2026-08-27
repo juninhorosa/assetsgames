@@ -8,7 +8,14 @@ import {
   generatePngBase64,
   resolveProfile,
 } from "../generate";
+import {
+  DEFAULT_SERVER_FRAMING,
+  bytesToBase64,
+  frameAssetPng,
+  shouldFrameMode,
+} from "@/lib/server-framing";
 import { DIRECTION_SETS, VIEW_LABELS, type ViewKey } from "@/lib/style-profile";
+
 
 const MAX_JOBS = 4;
 
