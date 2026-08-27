@@ -204,8 +204,17 @@ function Generator() {
   const [reliefOpts, setReliefOpts] = useState<ReliefOptions>(DEFAULT_RELIEF_OPTIONS);
   const [motion3d, setMotion3d] = useState<MotionFrame[] | null>(null);
 
-  const params = { mode, animation, columns, rows, uiKind };
-  const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind]);
+  const [model3dStyle, setModel3dStyle] = useState<Model3dStyleKey>(DEFAULT_MODEL3D_STYLE);
+
+  const params = { mode, animation, columns, rows, uiKind, model3dStyle };
+  const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind, model3dStyle]);
+
+  /** Preset de malha coerente com a variação de estilo, mantendo sentido e silhueta. */
+  function selectModel3dStyle(id: Model3dStyleKey) {
+    setModel3dStyle(id);
+    const variant = findModel3dStyle(id);
+    setReliefOpts((prev) => ({ ...prev, ...variant.relief }));
+  }
 
   const newProject = useMutation({
     mutationFn: async () => {
