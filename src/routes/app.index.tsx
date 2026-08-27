@@ -41,7 +41,9 @@ import { MaterialPreview3D } from "@/components/studio/MaterialPreview3D";
 import { Model3DPreview } from "@/components/studio/Model3DPreview";
 
 import {
-  ANIMATION_PRESETS,
+  ANIMATION_ACTIONS,
+  findAction,
+
   DEFAULT_STYLE_PROFILE,
   MODE_LABELS,
   STYLE_LABELS,
