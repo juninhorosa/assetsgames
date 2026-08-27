@@ -209,6 +209,8 @@ function Generator() {
   const [motion3d, setMotion3d] = useState<MotionFrame[] | null>(null);
 
   const [model3dStyle, setModel3dStyle] = useState<Model3dStyleKey>(DEFAULT_MODEL3D_STYLE);
+  const [directionSet, setDirectionSet] = useState<string>("single");
+
 
   const params = { mode, animation, columns, rows, uiKind, model3dStyle };
   const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind, model3dStyle]);
