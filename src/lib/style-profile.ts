@@ -90,6 +90,78 @@ export interface GenerationParams {
   columns?: number | undefined;
   rows?: number | undefined;
   uiKind?: string | undefined;
+  /** Variação de estilo 3D — só usada no modo `model3d`. */
+  model3dStyle?: Model3dStyleKey | undefined;
+}
+
+/** Variações controladas de estilo para a geração 3D. */
+export type Model3dStyleKey =
+  | "low-poly"
+  | "hand-painted"
+  | "pbr-realistic"
+  | "toon-cel"
+  | "clay-sculpt";
+
+export interface Model3dStyleVariant {
+  id: Model3dStyleKey;
+  label: string;
+  hint: string;
+  /** Injetado no prompt — descreve superfície/shading, nunca a câmera ou a silhueta. */
+  prompt: string;
+  /** Preset de malha coerente com o estilo (relevo 2.5D). */
+  relief: { segments: number; depth: number; smooth: number };
+}
+
+export const MODEL3D_STYLES: Model3dStyleVariant[] = [
+  {
+    id: "low-poly",
+    label: "Low poly",
+    hint: "faces planas, malha leve",
+    prompt:
+      "low poly 3D render look: flat faceted planes, hard shading breaks between facets, no micro texture, chunky simplified forms while keeping the overall proportions and outline intact",
+    relief: { segments: 72, depth: 0.3, smooth: 0.05 },
+  },
+  {
+    id: "hand-painted",
+    label: "Hand-painted",
+    hint: "pintado à mão, volume suave",
+    prompt:
+      "hand-painted 3D game asset look: painterly brushwork baked into the diffuse, soft gradient shading that sculpts volume, gentle rim light, no photographic grain",
+    relief: { segments: 128, depth: 0.35, smooth: 0.45 },
+  },
+  {
+    id: "pbr-realistic",
+    label: "PBR realista",
+    hint: "materiais físicos, alto detalhe",
+    prompt:
+      "photorealistic PBR 3D asset look: physically accurate materials, fine micro-surface detail, crisp ambient occlusion in the recesses, neutral studio lighting, no stylization",
+    relief: { segments: 192, depth: 0.42, smooth: 0.3 },
+  },
+  {
+    id: "toon-cel",
+    label: "Toon / cel-shaded",
+    hint: "bandas de luz, contorno limpo",
+    prompt:
+      "cel-shaded 3D look: two or three flat light bands instead of smooth gradients, clean dark outline hugging the silhouette, saturated flat fills, no texture noise",
+    relief: { segments: 96, depth: 0.28, smooth: 0.25 },
+  },
+  {
+    id: "clay-sculpt",
+    label: "Clay / escultura",
+    hint: "massa modelada, formas cheias",
+    prompt:
+      "sculpted clay 3D look: matte modelling-clay surface, thumb-pressed planes, plump rounded volumes with strong soft shading, no glossy highlights and no surface pattern",
+    relief: { segments: 144, depth: 0.5, smooth: 0.6 },
+  },
+];
+
+export const DEFAULT_MODEL3D_STYLE: Model3dStyleKey = "hand-painted";
+
+export function findModel3dStyle(id: string | undefined): Model3dStyleVariant {
+  return (
+    MODEL3D_STYLES.find((s) => s.id === id) ??
+    MODEL3D_STYLES.find((s) => s.id === DEFAULT_MODEL3D_STYLE)!
+  );
 }
 
 export function detailWord(detail: number): string {
@@ -148,14 +220,19 @@ export function buildPrompt(
         "Centered, isolated on a solid flat pure white background, no text, no watermark, crisp clean edges suitable for alpha cut-out, subtle inner bevel and readable silhouette.",
         styleLine + "." + extra,
       ].join(" ");
-    case "model3d":
+    case "model3d": {
+      const variant = findModel3dStyle(params.model3dStyle);
       return [
-        `A single game prop for 3D conversion: ${userPrompt}.`,
-        "Strict orthographic front view, perfectly centered and axis-aligned, no perspective distortion, no camera tilt.",
+        `A single game asset for 3D conversion: ${userPrompt}.`,
+        "Strict orthographic projection, perfectly centered and axis-aligned, no perspective distortion, no camera tilt.",
         "Even diffuse lighting with soft self-shading that reads as volume: brighter where the surface faces the viewer, darker in recesses and cavities, so luminance can be used as a depth map.",
-        "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out, clean readable silhouette, subject fills the frame.",
-        styleLine + "." + extra,
+        "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out, subject fills the frame.",
+        `Style variation: ${variant.prompt}.`,
+        "The style variation only changes surface, shading and material treatment — keep the exact same subject, the same proportions, the same volume distribution and the same crisp readable silhouette, with the outline unbroken and no part of the shape cropped or dissolved.",
+        styleLine + ".",
+        view + extra,
       ].join(" ");
+    }
     case "sprite":
     default:
       return [

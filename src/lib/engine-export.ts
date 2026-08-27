@@ -27,7 +27,9 @@ export interface AssetExport {
   /** extra binary files (GLB meshes) keyed by path inside the pack */
   models?: Record<string, Uint8Array> | undefined;
   /** stop-motion 3D metadata, when a 3D movement was generated */
-  motion3d?: { fps: number; frameCount: number; depth: number; segments: number } | undefined;
+  motion3d?:
+    | { fps: number; frameCount: number; depth: number; segments: number; style?: string | undefined }
+    | undefined;
 }
 
 function slug(name: string) {

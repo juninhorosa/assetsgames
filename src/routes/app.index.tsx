@@ -55,6 +55,10 @@ import {
   VIEW_LABELS,
   type ViewKey,
   buildPrompt,
+  DEFAULT_MODEL3D_STYLE,
+  MODEL3D_STYLES,
+  findModel3dStyle,
+  type Model3dStyleKey,
   type AssetMode,
   type StyleKey,
   type StyleProfile,
@@ -204,8 +208,17 @@ function Generator() {
   const [reliefOpts, setReliefOpts] = useState<ReliefOptions>(DEFAULT_RELIEF_OPTIONS);
   const [motion3d, setMotion3d] = useState<MotionFrame[] | null>(null);
 
-  const params = { mode, animation, columns, rows, uiKind };
-  const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind]);
+  const [model3dStyle, setModel3dStyle] = useState<Model3dStyleKey>(DEFAULT_MODEL3D_STYLE);
+
+  const params = { mode, animation, columns, rows, uiKind, model3dStyle };
+  const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind, model3dStyle]);
+
+  /** Preset de malha coerente com a variação de estilo, mantendo sentido e silhueta. */
+  function selectModel3dStyle(id: Model3dStyleKey) {
+    setModel3dStyle(id);
+    const variant = findModel3dStyle(id);
+    setReliefOpts((prev) => ({ ...prev, ...variant.relief }));
+  }
 
   const newProject = useMutation({
     mutationFn: async () => {
@@ -589,6 +602,7 @@ function Generator() {
                 frameCount: motion3d.length,
                 depth: reliefOpts.depth,
                 segments: reliefOpts.segments,
+                style: findModel3dStyle(model3dStyle).label,
               }
             : undefined,
         },
@@ -1030,6 +1044,28 @@ function Generator() {
           {(mode === "model3d" || mode === "spritesheet") && (
             <>
               <div className="space-y-2">
+                <Label>Variação de estilo 3D</Label>
+                <Select
+                  value={model3dStyle}
+                  onValueChange={(v) => selectModel3dStyle(v as Model3dStyleKey)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MODEL3D_STYLES.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.label} — {s.hint}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Muda só superfície e shading. Sentido ({VIEW_LABELS[profile.view ?? "side-right"]}),
+                  volume e silhueta ficam travados.
+                </p>
+              </div>
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Profundidade</Label>
                   <span className="font-mono text-[11px] text-primary">
@@ -1073,7 +1109,7 @@ function Generator() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[48, 96, 128, 192, 256].map((n) => (
+                    {[48, 72, 96, 128, 144, 192, 256].map((n) => (
                       <SelectItem key={n} value={String(n)}>
                         {n}×{n} quads
                       </SelectItem>
