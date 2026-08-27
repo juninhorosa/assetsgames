@@ -81,6 +81,16 @@ export default defineTool({
       .max(2048)
       .nullable()
       .describe("Side of the normalized square canvas in px. Default 512."),
+    target_body_height: z
+      .number()
+      .int()
+      .min(16)
+      .max(1024)
+      .nullable()
+      .describe(
+        "Auto-fit the canvas/cell so the character body ends up this tall in px (e.g. 100-110). Overrides frame_size; scale stays identical across actions.",
+      ),
+
     return_images: z
       .boolean()
       .nullable()
