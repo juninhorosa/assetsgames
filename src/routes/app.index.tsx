@@ -491,26 +491,114 @@ function Generator() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function exportEngine(engine: Engine) {
+  /** Stop-motion 3D: uma malha de relevo por quadro da animação. */
+  async function buildMotion3d() {
+    if (!frames.length) {
+      toast.error("Fatie os quadros da sheet primeiro");
+      return;
+    }
+    setBusy("Gerando movimento 3D");
+    try {
+      const built: MotionFrame[] = [];
+      for (let i = 0; i < frames.length; i++) {
+        const raw = await loadImage(frames[i]!);
+        const source = hasAlpha(raw) ? frames[i]! : removeBackground(raw);
+        const img = source === frames[i] ? raw : await loadImage(source);
+        built.push({ mesh: buildRelief(img, reliefOpts), albedo: source });
+        setBusy(`Gerando movimento 3D (${i + 1}/${frames.length})`);
+      }
+      setMotion3d(built);
+      toast.success(`${built.length} quadros 3D prontos`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadMotionGlb() {
+    if (!motion3d) return;
+    const id = slugify(name || "asset");
+    setBusy("Exportando GLB animado");
+    try {
+      const blob = await exportAnimatedGlb(motion3d, `${id}_${animation}`, fps);
+      downloadBlob(blob, `${id}_${animation}_animated.glb`);
+      toast.success("GLB animado exportado");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Coleta as malhas GLB (estática, sequência e clip animado) para o pacote. */
+  async function collectModels(id: string) {
+    const models: Record<string, Uint8Array> = {};
+    if (relief && image) models[`models/${id}.glb`] = await glbBytes(relief, image, id);
+    if (motion3d) {
+      for (let i = 0; i < motion3d.length; i++) {
+        const frame = motion3d[i]!;
+        const label = String(i).padStart(2, "0");
+        models[`models/frames/${id}_${label}.glb`] = await glbBytes(
+          frame.mesh,
+          frame.albedo,
+          `${id}_${label}`,
+        );
+      }
+      models[`models/${id}_animated.glb`] = await animatedGlbBytes(
+        motion3d,
+        `${id}_${animation}`,
+        fps,
+      );
+    }
+    return models;
+  }
+
+  async function exportEngine(engine: Engine | null) {
     if (!image) return;
-    const zip = buildEngineZip(
-      {
-        name: name.trim() || "asset",
-        mode,
-        style: profile,
-        prompt: finalPrompt,
-        image,
-        maps,
-        frames,
-        frameRects: rects,
-        animation:
-          mode === "spritesheet" && frames.length
-            ? { name: animation, fps, columns, rows }
+    const id = slugify(name || "asset");
+    setBusy("Empacotando");
+    try {
+      const models = await collectModels(id);
+      const zip = buildEngineZip(
+        {
+          name: name.trim() || "asset",
+          mode,
+          style: profile,
+          prompt: finalPrompt,
+          image,
+          maps,
+          frames,
+          frameRects: rects,
+          animation:
+            mode === "spritesheet" && frames.length
+              ? {
+                  name: animation,
+                  label: findAction(animation)?.label,
+                  fps,
+                  columns,
+                  rows,
+                }
+              : undefined,
+          models,
+          motion3d: motion3d
+            ? {
+                fps,
+                frameCount: motion3d.length,
+                depth: reliefOpts.depth,
+                segments: reliefOpts.segments,
+              }
             : undefined,
-      },
-      engine,
-    );
-    downloadBlob(zip, `${slugify(name || "asset")}-${engine}.zip`);
+        },
+        engine,
+      );
+      downloadBlob(zip, `${id}-${engine ?? "ai-pack"}.zip`);
+      toast.success(engine ? `Pacote ${engine} pronto` : "Pacote para IA pronto");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
