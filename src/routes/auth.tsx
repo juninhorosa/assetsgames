@@ -119,6 +119,11 @@ function AuthPage() {
           <span className="font-mono tracking-tight">FORGE3D ASSET STUDIO</span>
         </Link>
 
+        <h1 className="mb-6 text-xl font-semibold tracking-tight">
+          Acesse o Forge3D Asset Studio
+        </h1>
+
+
         <div className="panel p-6">
           <Tabs defaultValue="signin">
             <TabsList className="mb-6 w-full">
