@@ -647,20 +647,21 @@ function Generator() {
           {mode === "spritesheet" && (
             <>
               <div className="space-y-2">
-                <Label>Animação</Label>
-                <Select value={animation} onValueChange={setAnimation}>
+                <Label>Ação do personagem</Label>
+                <Select value={animation} onValueChange={selectAction}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ANIMATION_PRESETS.map((a) => (
-                      <SelectItem key={a} value={a}>
-                        {a}
+                    {ANIMATION_ACTIONS.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <Label>Colunas: {columns}</Label>
                 <Slider
