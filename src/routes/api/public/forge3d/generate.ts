@@ -10,6 +10,7 @@ import {
   type AssetMode,
   type Model3dStyleKey,
 } from "@/lib/style-profile";
+import { estimateCredits } from "@/lib/pricing";
 
 const MAX_JOBS = 8;
 
