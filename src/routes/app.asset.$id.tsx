@@ -175,6 +175,9 @@ function AssetDetail() {
                   {ENGINE_LABELS[engine]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuItem onClick={() => exportEngine(null)}>
+                Pacote para IA (manifesto)
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
