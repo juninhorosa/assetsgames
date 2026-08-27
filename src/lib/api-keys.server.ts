@@ -115,7 +115,7 @@ export async function recordApiRun(input: {
       duration_ms: input.durationMs ?? null,
       prompt: input.prompt ?? null,
       error: input.error ?? null,
-      meta: input.meta ?? {},
+      meta: (input.meta ?? {}) as never,
     });
   } catch {
     /* telemetria não deve derrubar a geração */
