@@ -2,8 +2,47 @@ export type StyleKey = "pixel-art" | "low-poly" | "stylized" | "pbr-realistic";
 
 export type AssetMode = "sprite" | "spritesheet" | "texture" | "ui" | "model3d";
 
+/** Sentido/vista travada do projeto — mantém todos os assets no mesmo ângulo. */
+export type ViewKey =
+  | "side-right"
+  | "side-left"
+  | "front"
+  | "three-quarter"
+  | "top-down"
+  | "isometric";
+
+export const VIEW_LABELS: Record<ViewKey, string> = {
+  "side-right": "Lateral — virado para a direita",
+  "side-left": "Lateral — virado para a esquerda",
+  front: "Frontal (de frente para a câmera)",
+  "three-quarter": "3/4 (semi-perfil)",
+  "top-down": "Top-down (visto de cima)",
+  isometric: "Isométrico (45°)",
+};
+
+const VIEW_PROMPTS: Record<ViewKey, string> = {
+  "side-right":
+    "strict side view (pure profile) with the subject facing to the RIGHT of the frame, camera at subject height, perfectly level horizon, no rotation and no perspective drift",
+  "side-left":
+    "strict side view (pure profile) with the subject facing to the LEFT of the frame, camera at subject height, perfectly level horizon, no rotation and no perspective drift",
+  front:
+    "strict front view with the subject facing the camera straight on, symmetrical, camera at subject height, no rotation and no perspective drift",
+  "three-quarter":
+    "consistent three-quarter view, subject rotated 45 degrees to its right so both the front and one side are visible, camera at subject height, identical rotation in every asset",
+  "top-down":
+    "strict top-down view straight from above, orthographic, subject facing up the frame, no perspective",
+  isometric:
+    "consistent isometric view at 45 degrees horizontally and about 30 degrees above, orthographic projection, identical camera angle in every asset",
+};
+
+export function viewLine(profile: StyleProfile): string {
+  return VIEW_PROMPTS[profile.view ?? "side-right"];
+}
+
 export interface StyleProfile {
   style: StyleKey;
+  /** Vista/direção travada: todos os assets do projeto usam este ângulo. */
+  view: ViewKey;
   palette: string;
   resolution: number;
   detail: number; // 1..10
@@ -12,6 +51,7 @@ export interface StyleProfile {
 
 export const DEFAULT_STYLE_PROFILE: StyleProfile = {
   style: "stylized",
+  view: "side-right",
   palette: "warm earth tones with teal accents",
   resolution: 1024,
   detail: 6,
@@ -69,6 +109,7 @@ export function buildPrompt(
 ): string {
   const styleLine = `${STYLE_PROMPTS[profile.style]}, color palette: ${profile.palette}, ${detailWord(profile.detail)}`;
   const extra = profile.extra?.trim() ? ` Art direction notes: ${profile.extra.trim()}.` : "";
+  const view = `Camera and orientation lock: ${viewLine(profile)}.`;
 
   switch (params.mode) {
     case "spritesheet": {
@@ -88,7 +129,9 @@ export function buildPrompt(
         `Uniform cell size, no gaps, no borders, no numbers, no captions, no onion-skin ghosting, no drop shadow outside the cell.`,
         `Solid flat pure white background so it can be keyed out.`,
         styleLine + ".",
-        "Side-view full body, consistent proportions across every frame." + extra,
+        view,
+        "Full body, consistent proportions and the exact same facing direction across every frame." +
+          extra,
       ].join(" ");
     }
 
@@ -111,14 +154,16 @@ export function buildPrompt(
         "Strict orthographic front view, perfectly centered and axis-aligned, no perspective distortion, no camera tilt.",
         "Even diffuse lighting with soft self-shading that reads as volume: brighter where the surface faces the viewer, darker in recesses and cavities, so luminance can be used as a depth map.",
         "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out, clean readable silhouette, subject fills the frame.",
-        styleLine + "." + extra,
+        styleLine + ".",
+        view + extra,
       ].join(" ");
     case "sprite":
     default:
       return [
         `A single game asset sprite of: ${userPrompt}.`,
         "One subject, centered, full body, isolated on a solid flat pure white background, no text, no props outside the subject, clean readable silhouette suitable for alpha cut-out.",
-        styleLine + "." + extra,
+        styleLine + ".",
+        view + extra,
       ].join(" ");
   }
 }
