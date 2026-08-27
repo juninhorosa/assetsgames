@@ -1108,7 +1108,7 @@ function Generator() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[48, 96, 128, 192, 256].map((n) => (
+                    {[48, 72, 96, 128, 144, 192, 256].map((n) => (
                       <SelectItem key={n} value={String(n)}>
                         {n}×{n} quads
                       </SelectItem>
