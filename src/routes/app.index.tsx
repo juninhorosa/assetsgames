@@ -172,7 +172,10 @@ function Generator() {
   const [frames, setFrames] = useState<string[]>([]);
   const [rects, setRects] = useState<FrameRect[]>([]);
   const [cell, setCell] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-  const [fps] = useState(12);
+  const [fps, setFps] = useState(12);
+  const [packActions, setPackActions] = useState<string[]>(["idle", "walk", "run", "attack"]);
+  const [packProgress, setPackProgress] = useState<{ done: number; total: number } | null>(null);
+
   const [relief, setRelief] = useState<MeshData | null>(null);
   const [reliefOpts, setReliefOpts] = useState<ReliefOptions>(DEFAULT_RELIEF_OPTIONS);
 
