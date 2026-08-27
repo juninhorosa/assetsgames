@@ -21,6 +21,7 @@ import { Route as ApiEditAssetRouteImport } from './routes/api/edit-asset'
 import { Route as ApiGenerateAssetRouteImport } from './routes/api/generate-asset'
 import { Route as ApiRosterRouteImport } from './routes/api/roster'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppBatchRouteImport } from './routes/app.batch'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
 import { Route as AppUsageRouteImport } from './routes/app.usage'
@@ -95,6 +96,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBatchRoute = AppBatchRouteImport.update({
   id: '/batch',
   path: '/batch',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/app/usage': typeof AppUsageRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/app/usage': typeof AppUsageRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/app/usage': typeof AppUsageRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
+    | '/app/admin'
     | '/app/batch'
     | '/app/library'
     | '/app/usage'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
+    | '/app/admin'
     | '/app/batch'
     | '/app/library'
     | '/app/usage'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
+    | '/app/admin'
     | '/app/batch'
     | '/app/library'
     | '/app/usage'
@@ -412,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/batch': {
       id: '/app/batch'
       path: '/batch'
@@ -493,6 +512,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppBatchRoute: typeof AppBatchRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppUsageRoute: typeof AppUsageRoute
@@ -502,6 +522,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppBatchRoute: AppBatchRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppUsageRoute: AppUsageRoute,
