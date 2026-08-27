@@ -20,7 +20,13 @@ export interface AssetExport {
   maps?: Partial<Record<MapType, string>> | undefined;
   frames?: string[] | undefined;
   frameRects?: FrameRect[] | undefined;
-  animation?: { name: string; fps: number; columns: number; rows: number } | undefined;
+  animation?:
+    | { name: string; label?: string | undefined; fps: number; columns: number; rows: number }
+    | undefined;
+  /** extra binary files (GLB meshes) keyed by path inside the pack */
+  models?: Record<string, Uint8Array> | undefined;
+  /** stop-motion 3D metadata, when a 3D movement was generated */
+  motion3d?: { fps: number; frameCount: number; depth: number; segments: number } | undefined;
 }
 
 function slug(name: string) {
