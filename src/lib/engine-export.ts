@@ -294,16 +294,16 @@ animations = [{
 `;
 }
 
-function readme(asset: AssetExport, engine: Engine) {
+function readme(asset: AssetExport, engine: Engine, preset: ExportPreset) {
   const id = slug(asset.name);
   const steps: Record<Engine, string> = {
-    unity: `1. Copie a pasta \`textures/\` (e \`frames/\`, se houver) para \`Assets/Forge3D/${id}/\`.
+    unity: `1. Copie a pasta \`textures/\` (e \`frames/\`, se houver) para \`${preset.paths.root}/${id}/\`.
 2. Copie \`Forge3D_${id}_Importer.cs\` para \`Assets/Editor/\`.
 3. Reimporte a pasta: as texturas ganham alpha, wrap e filtro corretos automaticamente.`,
     unreal: `1. Copie esta pasta inteira para um local acessível do projeto.
 2. No Unreal: Tools > Execute Python Script > \`import_${id}.py\`.
-3. As texturas entram em \`/Game/Forge3D/${id}\` e o material \`M_${id}\` é montado com os mapas PBR.`,
-    godot: `1. Copie a pasta para \`res://forge3d/${id}/\`.
+3. As texturas entram em \`${preset.paths.root}/${id}\` e o material \`M_${id}\` é montado com os mapas PBR.`,
+    godot: `1. Copie a pasta para \`${preset.paths.root}/${id}/\`.
 2. O Godot importa os PNGs automaticamente.
 3. Use \`${id}_material.tres\` em um MeshInstance3D${asset.animation ? ` ou \`${id}_frames.tres\` em um AnimatedSprite2D` : ""}.`,
   };
@@ -315,11 +315,20 @@ Gerado pelo Forge3D Asset Studio.
 - Estilo: ${asset.style.style}
 - Prompt: ${asset.prompt}
 
+## Preset aplicado — ${preset.label}
+
+- Escala: ${preset.unit} (malhas ×${preset.meshScale}, up ${preset.upAxis})
+- Pivô: ${preset.pivot} · ${preset.pixelsPerUnit} px por unidade
+- Material: ${preset.material.shader} (${preset.material.alphaCutout ? "alpha cutout" : "alpha blend"}, normal ${preset.material.normalSpace})
+- Caminho de destino: \`${preset.paths.root}/${id}\`
+${preset.notes.map((n) => `- ${n}`).join("\n")}
+
 ## Importação
 
 ${steps[engine]}
 `;
 }
+
 
 /**
  * Builds an engine-ready ZIP (textures, meshes, metadata, import script) that
