@@ -5,6 +5,7 @@ import {
   Box,
   Download,
   FolderPlus,
+  ListChecks,
   Loader2,
   Package,
   Save,
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
