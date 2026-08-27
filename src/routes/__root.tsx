@@ -86,6 +86,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Gere sprites, sprite sheets, texturas PBR e UI para jogos e exporte para Unity, Unreal e Godot.",
       },
       { name: "author", content: "Lovable" },
+      {
+        name: "google-site-verification",
+        content: "25-Layq9JGssRMNy-CXtQTlO7UMpNxLf8pGW_vVdvVw",
+      },
       { property: "og:title", content: "Forge3D — Gerador de Assets para Jogos" },
       {
         property: "og:description",
