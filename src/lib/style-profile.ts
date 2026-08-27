@@ -220,14 +220,19 @@ export function buildPrompt(
         "Centered, isolated on a solid flat pure white background, no text, no watermark, crisp clean edges suitable for alpha cut-out, subtle inner bevel and readable silhouette.",
         styleLine + "." + extra,
       ].join(" ");
-    case "model3d":
+    case "model3d": {
+      const variant = findModel3dStyle(params.model3dStyle);
       return [
-        `A single game prop for 3D conversion: ${userPrompt}.`,
-        "Strict orthographic front view, perfectly centered and axis-aligned, no perspective distortion, no camera tilt.",
+        `A single game asset for 3D conversion: ${userPrompt}.`,
+        "Strict orthographic projection, perfectly centered and axis-aligned, no perspective distortion, no camera tilt.",
         "Even diffuse lighting with soft self-shading that reads as volume: brighter where the surface faces the viewer, darker in recesses and cavities, so luminance can be used as a depth map.",
-        "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out, clean readable silhouette, subject fills the frame.",
-        styleLine + "." + extra,
+        "No cast shadows, no ground plane, no background elements, solid flat pure white background for alpha cut-out, subject fills the frame.",
+        `Style variation: ${variant.prompt}.`,
+        "The style variation only changes surface, shading and material treatment — keep the exact same subject, the same proportions, the same volume distribution and the same crisp readable silhouette, with the outline unbroken and no part of the shape cropped or dissolved.",
+        styleLine + ".",
+        view + extra,
       ].join(" ");
+    }
     case "sprite":
     default:
       return [
