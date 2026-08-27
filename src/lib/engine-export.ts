@@ -2,6 +2,7 @@ import { zipSync, strToU8 } from "fflate";
 import { buildAgentGuide, buildManifest } from "./ai-pack";
 import { dataUrlToBytes, type FrameRect, type MapType } from "./image-pipeline";
 import type { AssetMode, StyleProfile } from "./style-profile";
+import { resolvePreset, type ExportPreset, type PivotPreset } from "./export-presets";
 
 export type Engine = "unity" | "unreal" | "godot";
 
@@ -454,7 +455,7 @@ export function buildEngineZip(
   });
   files["forge3d.manifest.json"] = strToU8(JSON.stringify(manifest, null, 2));
   files["AGENTS.md"] = strToU8(buildAgentGuide(manifest));
-  files["README.md"] = strToU8(readme(asset, engine ?? "unity"));
+  files["README.md"] = strToU8(readme(asset, engine ?? "unity", preset));
 
   const zipped = zipSync(files, { level: 6 });
   return new Blob([zipped as unknown as BlobPart], { type: "application/zip" });
