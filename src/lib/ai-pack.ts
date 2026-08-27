@@ -128,6 +128,7 @@ export function buildManifest(input: ManifestInput) {
       notes: input.style.extra || null,
       rule: "Todos os assets deste projeto usam este estilo e este sentido de vista. Ao gerar novos assets, reutilize styleLock sem alterações para manter coerência visual.",
     },
+    files,
     conventions: {
       colorSpace: { albedo: "sRGB", dataMaps: "linear" },
       alpha: "canal alpha = silhueta; alpha < 0.06 é vazio",
