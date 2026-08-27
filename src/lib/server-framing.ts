@@ -170,25 +170,42 @@ function resample(img: Rgba, src: Bounds, dw: number, dh: number): Rgba {
   return { width: dw, height: dh, data: out };
 }
 
+export interface AssetFramingResult {
+  png: Uint8Array;
+  /** Lado real da tela usada (px) — pode diferir de opts.canvas no auto-ajuste. */
+  canvas: number;
+  /** Altura do sujeito depois da normalização (px). */
+  bodyHeight: number;
+}
+
 /**
  * Recebe um PNG (bytes), devolve um PNG quadrado com fundo transparente,
  * sujeito centrado, escala fixa e o mesmo pivô — todos os assets saem
- * exatamente no mesmo tamanho e enquadramento.
+ * exatamente no mesmo tamanho e enquadramento. Com `targetBodyHeight` a tela
+ * é auto-dimensionada para o sujeito sair na altura pedida.
  */
-export function frameAssetPng(
+export function frameAssetPngDetailed(
   bytes: Uint8Array,
   opts: ServerFramingOptions = DEFAULT_SERVER_FRAMING,
-): Uint8Array {
+): AssetFramingResult {
   const img = toRgba8(decode(bytes));
   keyOutWhite(img, opts.tolerance);
   const bounds = alphaBounds(img);
-  const size = Math.max(64, Math.round(opts.canvas));
+  const fill = Math.min(0.98, Math.max(0.4, opts.fill));
+  let size = Math.max(64, Math.round(opts.canvas));
+  if (bounds && opts.targetBodyHeight && opts.targetBodyHeight > 0) {
+    // dh = bounds.h * min(size*fill/w, size*fill/h) → resolve size para o alvo.
+    const needed = (opts.targetBodyHeight * Math.max(bounds.w, bounds.h)) / (fill * bounds.h);
+    size = clampCanvas(needed, opts, 64);
+  }
   const canvas = new Uint8ClampedArray(size * size * 4);
+  let bodyHeight = 0;
   if (bounds) {
-    const target = size * Math.min(0.98, Math.max(0.4, opts.fill));
+    const target = size * fill;
     const scale = Math.min(target / bounds.w, target / bounds.h);
     const dw = Math.max(1, Math.round(bounds.w * scale));
     const dh = Math.max(1, Math.round(bounds.h * scale));
+    bodyHeight = dh;
     const margin = Math.round((size - target) / 2);
     const dx = Math.round((size - dw) / 2);
     const dy = opts.pivot === "bottom-center" ? size - margin - dh : Math.round((size - dh) / 2);
@@ -208,8 +225,20 @@ export function frameAssetPng(
       }
     }
   }
-  return encode({ width: size, height: size, data: canvas, channels: 4, depth: 8 });
+  return {
+    png: encode({ width: size, height: size, data: canvas, channels: 4, depth: 8 }),
+    canvas: size,
+    bodyHeight,
+  };
 }
+
+export function frameAssetPng(
+  bytes: Uint8Array,
+  opts: ServerFramingOptions = DEFAULT_SERVER_FRAMING,
+): Uint8Array {
+  return frameAssetPngDetailed(bytes, opts).png;
+}
+
 
 export function base64ToBytes(b64: string): Uint8Array {
   const binary = atob(b64);
