@@ -105,7 +105,10 @@ export function buildRelief(img: HTMLImageElement, options: ReliefOptions): Mesh
         const u = x / segments;
         const v = y / segments;
         const h = height[y * size + x]!;
-        const z = pass === 0 ? -half + opts.depth * (0.25 + 0.75 * h) : -half;
+        // Relevo simétrico: frente e costas são espelhadas, então de perfil o
+        // asset tem volume (lente) em vez de virar uma lâmina plana.
+        const bulge = (opts.depth / 2) * (0.35 + 0.65 * h);
+        const z = pass === 0 ? bulge : -bulge;
         positions.push(u * 2 - 1, 1 - v * 2, z);
         uvs.push(u, 1 - v);
       }
