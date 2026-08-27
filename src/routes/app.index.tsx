@@ -281,7 +281,10 @@ function Generator() {
     }
   }
 
-  /** Gera uma sheet por ação selecionada, fatia os quadros e salva cada uma na biblioteca. */
+  /**
+   * Gera uma sheet por ação × direção selecionada, fatia os quadros e salva cada
+   * combinação na biblioteca (mesmo personagem, mesmo Style Profile).
+   */
   async function generatePack() {
     if (!prompt.trim()) {
       toast.error("Descreva o personagem antes de gerar o pack");
@@ -297,13 +300,20 @@ function Generator() {
     }
 
     const actions = ANIMATION_ACTIONS.filter((a) => packActions.includes(a.id));
-    setPackProgress({ done: 0, total: actions.length });
+    const set = findDirectionSet(directionSet);
+    const views: (ViewKey | undefined)[] = set.views.length ? set.views : [undefined];
+    const jobs = actions.flatMap((action) => views.map((view) => ({ action, view })));
+
+    setPackProgress({ done: 0, total: jobs.length });
     const baseName = name.trim() || prompt.trim().slice(0, 32);
 
     try {
-      for (let i = 0; i < actions.length; i++) {
-        const action = actions[i]!;
-        setBusy(`Gerando ${action.label} (${i + 1}/${actions.length})`);
+      for (let i = 0; i < jobs.length; i++) {
+        const { action, view } = jobs[i]!;
+        const viewLabel = view ? VIEW_LABELS[view] : null;
+        setBusy(
+          `Gerando ${action.label}${viewLabel ? ` · ${viewLabel}` : ""} (${i + 1}/${jobs.length})`,
+        );
         setIsFinal(false);
         setImage(null);
         resetDerived();
@@ -313,6 +323,7 @@ function Generator() {
           animation: action.id,
           columns: action.columns,
           rows: action.rows,
+          view,
         });
 
         let sheet = "";
@@ -335,7 +346,7 @@ function Generator() {
 
         await saveAsset({
           projectId: project.id,
-          name: `${baseName} — ${action.label}`,
+          name: `${baseName} — ${action.label}${viewLabel ? ` — ${viewLabel}` : ""}`,
           mode: "spritesheet",
           prompt,
           finalPrompt: actionPrompt,
@@ -345,12 +356,13 @@ function Generator() {
             columns: action.columns,
             rows: action.rows,
             size,
+            view: view ?? profile.view,
           },
           image: sheet,
           maps: {},
           frames: sliced.frames,
           animation: {
-            name: action.id,
+            name: view ? `${action.id}_${view}` : action.id,
             fps: action.fps,
             columns: action.columns,
             rows: action.rows,
@@ -360,10 +372,10 @@ function Generator() {
           },
         });
 
-        setPackProgress({ done: i + 1, total: actions.length });
+        setPackProgress({ done: i + 1, total: jobs.length });
       }
       await qc.invalidateQueries({ queryKey: ["assets", project.id] });
-      toast.success(`${actions.length} animações salvas na biblioteca`);
+      toast.success(`${jobs.length} sheets salvas na biblioteca`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -371,6 +383,66 @@ function Generator() {
       setPackProgress(null);
     }
   }
+
+  /** Gera o asset estático (sprite/model3d) em cada direção do conjunto e salva. */
+  async function generateDirections() {
+    if (!prompt.trim()) {
+      toast.error("Descreva o asset antes de gerar as direções");
+      return;
+    }
+    if (!project) {
+      toast.error("Crie um projeto primeiro");
+      return;
+    }
+    const set = findDirectionSet(directionSet);
+    if (!set.views.length) {
+      toast.error("Escolha um conjunto de direções");
+      return;
+    }
+
+    setPackProgress({ done: 0, total: set.views.length });
+    const baseName = name.trim() || prompt.trim().slice(0, 32);
+
+    try {
+      for (let i = 0; i < set.views.length; i++) {
+        const view = set.views[i]!;
+        setBusy(`Gerando ${VIEW_LABELS[view]} (${i + 1}/${set.views.length})`);
+        setIsFinal(false);
+        setImage(null);
+        resetDerived();
+
+        const viewPrompt = buildPrompt(prompt, profile, { ...params, view });
+        let out = "";
+        await streamGenerate({ prompt: viewPrompt, size }, (dataUrl, final) => {
+          out = dataUrl;
+          setImage(dataUrl);
+          setIsFinal(final);
+        });
+        if (!out) throw new Error(`Falha ao gerar ${VIEW_LABELS[view]}`);
+
+        await saveAsset({
+          projectId: project.id,
+          name: `${baseName} — ${VIEW_LABELS[view]}`,
+          mode,
+          prompt,
+          finalPrompt: viewPrompt,
+          params: { ...params, size, view },
+          image: out,
+          maps: {},
+          frames: [],
+        });
+        setPackProgress({ done: i + 1, total: set.views.length });
+      }
+      await qc.invalidateQueries({ queryKey: ["assets", project.id] });
+      toast.success(`${set.views.length} direções salvas na biblioteca`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+      setPackProgress(null);
+    }
+  }
+
 
 
 
