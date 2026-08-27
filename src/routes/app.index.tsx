@@ -74,13 +74,17 @@ import {
 } from "@/lib/style-profile";
 import {
   DEFAULT_ALIGN_OPTIONS,
+  DEFAULT_FRAMING_OPTIONS,
   DEFAULT_PBR_OPTIONS,
   MAP_LABELS,
   alignFrames,
   composeSheetFromDataUrls,
   derivePbrMaps,
   loadImage,
+  normalizeFraming,
+  normalizeFramingBatch,
   removeBackground,
+
   sliceSheet,
   type FrameRect,
   type MapType,
