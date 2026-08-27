@@ -238,6 +238,7 @@ function Generator() {
     setFrames([]);
     setRects([]);
     setRelief(null);
+    setMotion3d(null);
   }
 
   async function generate() {
