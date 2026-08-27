@@ -244,6 +244,14 @@ export default defineTool({
         ...(framed
           ? { framed: true, canvas: { width: frameSize, height: frameSize }, pivot: "bottom-center" }
           : {}),
+        ...(sheetInfo
+          ? {
+              cell: { width: sheetInfo.cell, height: sheetInfo.cell },
+              body_height: sheetInfo.bodyHeight,
+              ground_line: sheetInfo.groundLine,
+            }
+          : {}),
+
         download_url: signed.data?.signedUrl ?? null,
         prompt: finalPrompt,
       });
