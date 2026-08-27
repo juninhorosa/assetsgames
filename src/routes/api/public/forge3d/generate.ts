@@ -10,6 +10,7 @@ import {
   type AssetMode,
   type Model3dStyleKey,
 } from "@/lib/style-profile";
+import { estimateCredits } from "@/lib/pricing";
 
 const MAX_JOBS = 8;
 
@@ -65,19 +66,23 @@ async function generateImage(prompt: string, size: string, key: string): Promise
 
 /**
  * Endpoint público para agentes/IAs gerarem assets direto.
- * Autenticação obrigatória por `x-forge3d-key` (segredo FORGE3D_API_KEY).
+ * Autenticação por `x-forge3d-key` com as chaves criadas em /app/settings/keys
+ * (comparação por hash SHA-256; chaves revogadas são rejeitadas).
  */
 export const Route = createFileRoute("/api/public/forge3d/generate")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env["FORGE3D_API_KEY"];
-        if (!expected) return new Response("API não configurada", { status: 500 });
         const provided =
           request.headers.get("x-forge3d-key") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (provided !== expected) return new Response("Chave inválida", { status: 401 });
+        const { verifyApiKey, trackApiKeyUsage } = await import("@/lib/api-keys.server");
+        const legacy = process.env["FORGE3D_API_KEY"];
+        const verified = await verifyApiKey(provided);
+        const legacyOk = !!legacy && provided === legacy;
+        if (!verified && !legacyOk) return new Response("Chave inválida", { status: 401 });
+
 
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("LOVABLE_API_KEY ausente", { status: 500 });
@@ -144,13 +149,27 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
           }
         } catch (e) {
           const err = e as Error & { status?: number };
+          if (verified && results.length) {
+            await trackApiKeyUsage(
+              verified.id,
+              estimateCredits({ images: results.length, size: b.size, mode: b.mode }),
+            );
+          }
           return Response.json(
             { error: err.message, partial: results },
             { status: err.status ?? 500 },
           );
         }
 
+        if (verified) {
+          await trackApiKeyUsage(
+            verified.id,
+            estimateCredits({ images: results.length, size: b.size, mode: b.mode }),
+          );
+        }
+
         return Response.json({ styleLock: profile, count: results.length, results });
+
       },
     },
   },

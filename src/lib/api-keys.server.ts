@@ -32,3 +32,54 @@ export async function hashApiKey(key: string): Promise<string> {
 export function keyPrefix(key: string): string {
   return key.slice(0, 16);
 }
+
+export interface VerifiedApiKey {
+  id: string;
+  userId: string;
+  scopes: string[];
+}
+
+/**
+ * Valida uma chave em claro contra os hashes do banco.
+ * Devolve null quando a chave é inexistente ou revogada.
+ */
+export async function verifyApiKey(provided: string): Promise<VerifiedApiKey | null> {
+  const clean = provided.trim();
+  if (!clean) return null;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("api_keys")
+    .select("id,user_id,scopes,revoked_at")
+    .eq("key_hash", await hashApiKey(clean))
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as { id: string; user_id: string; scopes: string[] | null; revoked_at: string | null };
+  if (row.revoked_at) return null;
+  return { id: row.id, userId: row.user_id, scopes: row.scopes ?? ["generate"] };
+}
+
+/** Contabiliza uso da chave (best-effort, nunca quebra a requisição). */
+export async function trackApiKeyUsage(id: string, credits: number, requests = 1): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("api_keys")
+      .select("request_count,credits_used")
+      .eq("id", id)
+      .maybeSingle();
+    const cur = (data ?? { request_count: 0, credits_used: 0 }) as {
+      request_count: number | null;
+      credits_used: number | null;
+    };
+    await supabaseAdmin
+      .from("api_keys")
+      .update({
+        request_count: (cur.request_count ?? 0) + requests,
+        credits_used: Number(cur.credits_used ?? 0) + credits,
+        last_used_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+  } catch {
+    /* telemetria não deve derrubar a geração */
+  }
+}

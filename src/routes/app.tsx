@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Boxes, Images, LogOut, Users, Wand2 } from "lucide-react";
+import { Boxes, Gauge, Images, KeyRound, LogOut, Users, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth.tsx";
@@ -48,6 +48,8 @@ function AppLayout() {
     { to: "/app", label: "Gerador", icon: Wand2, exact: true },
     { to: "/app/batch", label: "Elenco em lote", icon: Users, exact: false },
     { to: "/app/library", label: "Biblioteca", icon: Images, exact: false },
+    { to: "/app/usage", label: "Uso", icon: Gauge, exact: false },
+    { to: "/app/settings/keys", label: "API keys", icon: KeyRound, exact: false },
   ];
 
   return (
