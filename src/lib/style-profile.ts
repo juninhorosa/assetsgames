@@ -116,4 +116,122 @@ export function buildPrompt(
   }
 }
 
-export const ANIMATION_PRESETS = ["idle", "walk", "run", "attack", "jump", "death"] as const;
+/** Catálogo de ações de personagem — cada uma com beats de movimento e grade sugerida. */
+export interface AnimationAction {
+  id: string;
+  label: string;
+  /** Descrição em inglês dos keyframes, injetada no prompt. */
+  motion: string;
+  columns: number;
+  rows: number;
+  fps: number;
+}
+
+export const ANIMATION_ACTIONS: AnimationAction[] = [
+  {
+    id: "idle",
+    label: "Parado (idle)",
+    motion:
+      "idle breathing loop: weight settled on both feet, chest rising and falling, small shoulder and head sway, arms relaxed, loops seamlessly back to the first frame",
+    columns: 4,
+    rows: 1,
+    fps: 8,
+  },
+  {
+    id: "walk",
+    label: "Andando",
+    motion:
+      "walk cycle seen from the side: contact, down, passing, up poses for the left leg then mirrored for the right leg, arms swinging opposite to the legs, torso bobbing slightly, loops seamlessly",
+    columns: 4,
+    rows: 2,
+    fps: 12,
+  },
+  {
+    id: "run",
+    label: "Correndo",
+    motion:
+      "run cycle seen from the side: strong forward lean, longer stride, both feet off the ground on the airborne frames, bent arms pumping, hair and cloth trailing back, loops seamlessly",
+    columns: 4,
+    rows: 2,
+    fps: 16,
+  },
+  {
+    id: "attack",
+    label: "Atacando (batendo)",
+    motion:
+      "melee attack: anticipation wind-up, fast swing through the impact frame with a short motion arc, follow-through, then recovery back to guard; does not loop",
+    columns: 3,
+    rows: 2,
+    fps: 14,
+  },
+  {
+    id: "hurt",
+    label: "Tomando dano",
+    motion:
+      "hit reaction: body recoils backwards, head snapped back, arms flailing briefly, then returns to stance; does not loop",
+    columns: 4,
+    rows: 1,
+    fps: 12,
+  },
+  {
+    id: "death",
+    label: "Morrendo",
+    motion:
+      "death sequence: staggered off balance, knees buckling, falling forward onto the ground, final frame lying motionless on the floor; does not loop",
+    columns: 3,
+    rows: 2,
+    fps: 10,
+  },
+  {
+    id: "getup",
+    label: "Levantando",
+    motion:
+      "getting up from the ground: lying prone, pushing up with the arms, one knee planted, rising to a crouch, standing upright in the last frame; does not loop",
+    columns: 3,
+    rows: 2,
+    fps: 10,
+  },
+  {
+    id: "sit",
+    label: "Sentando",
+    motion:
+      "sitting down: standing, bending the knees, lowering the hips, seated on the ground with legs folded in the final frame; does not loop",
+    columns: 3,
+    rows: 2,
+    fps: 10,
+  },
+  {
+    id: "jump",
+    label: "Pulando",
+    motion:
+      "jump arc: crouch anticipation, explosive take-off, rising with legs tucked, apex, falling with legs extending, landing squash on the last frame; does not loop",
+    columns: 3,
+    rows: 2,
+    fps: 12,
+  },
+  {
+    id: "climb",
+    label: "Escalando",
+    motion:
+      "climbing loop seen from the side against a vertical surface: alternating hand and foot reaches pulling the body upward, loops seamlessly",
+    columns: 4,
+    rows: 1,
+    fps: 10,
+  },
+  {
+    id: "cast",
+    label: "Conjurando / habilidade",
+    motion:
+      "spell cast: gathering pose with hands drawing energy inward, charge build-up, release with arms thrown forward, recovery; does not loop",
+    columns: 3,
+    rows: 2,
+    fps: 12,
+  },
+];
+
+export function findAction(id: string): AnimationAction | undefined {
+  return ANIMATION_ACTIONS.find((a) => a.id === id);
+}
+
+export const ANIMATION_PRESETS = ANIMATION_ACTIONS.map((a) => a.id);
+
