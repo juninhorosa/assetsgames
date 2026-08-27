@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiSpriteSheetGeneratorRouteImport } from './routes/ai-sprite-sheet-generator'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as ApiEditAssetRouteImport } from './routes/api/edit-asset'
@@ -34,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiSpriteSheetGeneratorRoute = AiSpriteSheetGeneratorRouteImport.update({
+  id: '/ai-sprite-sheet-generator',
+  path: '/ai-sprite-sheet-generator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -47,6 +54,11 @@ const AuthRoute = AuthRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotmcpChar93ListToolsRoute =
@@ -132,9 +144,11 @@ const ApiPublicForge3dGenerateRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-sprite-sheet-generator': typeof AiSpriteSheetGeneratorRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
@@ -153,8 +167,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-sprite-sheet-generator': typeof AiSpriteSheetGeneratorRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
@@ -174,9 +190,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-sprite-sheet-generator': typeof AiSpriteSheetGeneratorRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
@@ -197,9 +215,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ai-sprite-sheet-generator'
     | '/app'
     | '/auth'
     | '/mcp'
+    | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit-asset'
@@ -218,8 +238,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ai-sprite-sheet-generator'
     | '/auth'
     | '/mcp'
+    | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit-asset'
@@ -238,9 +260,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ai-sprite-sheet-generator'
     | '/app'
     | '/auth'
     | '/mcp'
+    | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/api/edit-asset'
@@ -260,9 +284,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiSpriteSheetGeneratorRoute: typeof AiSpriteSheetGeneratorRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiEditAssetRoute: typeof ApiEditAssetRoute
@@ -285,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-sprite-sheet-generator': {
+      id: '/ai-sprite-sheet-generator'
+      path: '/ai-sprite-sheet-generator'
+      fullPath: '/ai-sprite-sheet-generator'
+      preLoaderRoute: typeof AiSpriteSheetGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app': {
       id: '/app'
       path: '/app'
@@ -304,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/list-tools': {
@@ -432,9 +472,11 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiSpriteSheetGeneratorRoute: AiSpriteSheetGeneratorRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   McpRoute: McpRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
