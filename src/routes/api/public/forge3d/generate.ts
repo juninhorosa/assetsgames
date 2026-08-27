@@ -148,13 +148,27 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
           }
         } catch (e) {
           const err = e as Error & { status?: number };
+          if (verified && results.length) {
+            await trackApiKeyUsage(
+              verified.id,
+              estimateCredits({ images: results.length, size: b.size, mode: b.mode }),
+            );
+          }
           return Response.json(
             { error: err.message, partial: results },
             { status: err.status ?? 500 },
           );
         }
 
+        if (verified) {
+          await trackApiKeyUsage(
+            verified.id,
+            estimateCredits({ images: results.length, size: b.size, mode: b.mode }),
+          );
+        }
+
         return Response.json({ styleLock: profile, count: results.length, results });
+
       },
     },
   },
