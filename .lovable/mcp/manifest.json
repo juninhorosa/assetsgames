@@ -58,6 +58,7 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "name": {
@@ -66,9 +67,13 @@
               "description": "Project name."
             },
             "description": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "description": "Optional short description."
             },
@@ -111,9 +116,13 @@
               "description": "Locked camera view, default side-right."
             },
             "palette": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "description": "Color palette description."
             },
@@ -131,9 +140,13 @@
               "description": "Detail level 1-10."
             },
             "extra": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "description": "Extra art-direction notes."
             }
@@ -146,9 +159,7 @@
             "palette",
             "detail",
             "extra"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -162,13 +173,15 @@
           "openWorldHint": true
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "project_id": {
               "anyOf": [
                 {
                   "type": "string",
-                  "format": "uuid"
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                 },
                 {
                   "type": "null"
@@ -200,9 +213,13 @@
               "description": "Asset mode, default sprite. Use spritesheet for animation."
             },
             "action": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "description": "Animation action id from list_capabilities (spritesheet only), e.g. walk."
             },
@@ -262,9 +279,13 @@
               "description": "3D style variation (model3d mode)."
             },
             "ui_kind": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "description": "UI kind, e.g. icon, button, frame (ui mode)."
             },
@@ -285,9 +306,13 @@
               "description": "Image size, default 1024x1024."
             },
             "return_images": {
-              "type": [
-                "boolean",
-                "null"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "description": "Include the PNG bytes in the reply. Default true; false returns only URLs."
             }
@@ -303,9 +328,7 @@
             "ui_kind",
             "size",
             "return_images"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       },
@@ -319,11 +342,13 @@
           "openWorldHint": false
         },
         "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
           "type": "object",
           "properties": {
             "project_id": {
               "type": "string",
               "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
               "description": "Project id from list_projects."
             },
             "limit": {
@@ -343,9 +368,7 @@
           "required": [
             "project_id",
             "limit"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
+          ]
         },
         "outputSchema": null
       }
