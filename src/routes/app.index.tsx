@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Anchor,
   Bot,
   Box,
   Boxes,
@@ -10,11 +11,14 @@ import {
   ListChecks,
   Loader2,
   Package,
+  PlayCircle,
   Save,
   Scissors,
   Sparkles,
   Wand2,
+  X,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
