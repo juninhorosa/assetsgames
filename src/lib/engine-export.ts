@@ -256,8 +256,9 @@ uv1_scale = Vector3(1, 1, 1)
 }
 
 
-function godotSpriteFrames(asset: AssetExport) {
+function godotSpriteFrames(asset: AssetExport, preset: ExportPreset) {
   const id = slug(asset.name);
+
   const anim = asset.animation!;
   const rects = asset.frameRects ?? [];
   const frames = rects
