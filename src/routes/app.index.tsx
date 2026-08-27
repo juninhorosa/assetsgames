@@ -13,7 +13,9 @@ import {
   Package,
   PlayCircle,
   Save,
+  Crop,
   Scissors,
+
   Sparkles,
   Wand2,
   X,
