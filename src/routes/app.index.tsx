@@ -253,6 +253,99 @@ function Generator() {
     }
   }
 
+  /** Gera uma sheet por ação selecionada, fatia os quadros e salva cada uma na biblioteca. */
+  async function generatePack() {
+    if (!prompt.trim()) {
+      toast.error("Descreva o personagem antes de gerar o pack");
+      return;
+    }
+    if (!project) {
+      toast.error("Crie um projeto primeiro");
+      return;
+    }
+    if (packActions.length === 0) {
+      toast.error("Selecione pelo menos uma ação");
+      return;
+    }
+
+    const actions = ANIMATION_ACTIONS.filter((a) => packActions.includes(a.id));
+    setPackProgress({ done: 0, total: actions.length });
+    const baseName = name.trim() || prompt.trim().slice(0, 32);
+
+    try {
+      for (let i = 0; i < actions.length; i++) {
+        const action = actions[i]!;
+        setBusy(`Gerando ${action.label} (${i + 1}/${actions.length})`);
+        setIsFinal(false);
+        setImage(null);
+        resetDerived();
+
+        const actionPrompt = buildPrompt(prompt, profile, {
+          mode: "spritesheet",
+          animation: action.id,
+          columns: action.columns,
+          rows: action.rows,
+        });
+
+        let sheet = "";
+        await streamGenerate({ prompt: actionPrompt, size }, (dataUrl, final) => {
+          sheet = dataUrl;
+          setImage(dataUrl);
+          setIsFinal(final);
+        });
+        if (!sheet) throw new Error(`Falha ao gerar ${action.label}`);
+
+        const img = await loadImage(sheet);
+        const sliced = sliceSheet(img, action.columns, action.rows);
+        setAnimation(action.id);
+        setColumns(action.columns);
+        setRows(action.rows);
+        setFps(action.fps);
+        setFrames(sliced.frames);
+        setRects(sliced.rects);
+        setCell({ w: sliced.cellWidth, h: sliced.cellHeight });
+
+        await saveAsset({
+          projectId: project.id,
+          name: `${baseName} — ${action.label}`,
+          mode: "spritesheet",
+          prompt,
+          finalPrompt: actionPrompt,
+          params: {
+            mode: "spritesheet",
+            animation: action.id,
+            columns: action.columns,
+            rows: action.rows,
+            size,
+          },
+          image: sheet,
+          maps: {},
+          frames: sliced.frames,
+          animation: {
+            name: action.id,
+            fps: action.fps,
+            columns: action.columns,
+            rows: action.rows,
+            cellWidth: sliced.cellWidth,
+            cellHeight: sliced.cellHeight,
+            rects: sliced.rects,
+          },
+        });
+
+        setPackProgress({ done: i + 1, total: actions.length });
+      }
+      await qc.invalidateQueries({ queryKey: ["assets", project.id] });
+      toast.success(`${actions.length} animações salvas na biblioteca`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+      setPackProgress(null);
+    }
+  }
+
+
+
   async function applyEdit() {
     if (!image || !editInstruction.trim()) return;
     setBusy("Refinando");
