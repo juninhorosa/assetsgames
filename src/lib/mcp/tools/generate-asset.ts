@@ -196,6 +196,8 @@ export default defineTool({
             ...(input.model3d_style ? { model3dStyle: input.model3d_style } : {}),
             ...(input.ui_kind ? { uiKind: input.ui_kind } : {}),
             ...(framed ? { framed: true, frameSize, pivot: "bottom-center" } : {}),
+            ...(sheetInfo ? { cellSize: sheetInfo.cell, bodyHeight: sheetInfo.bodyHeight, groundLine: sheetInfo.groundLine } : {}),
+
             source: "mcp",
           } as unknown as never,
           metadata: { frameCount: action ? action.columns * action.rows : 0 } as unknown as never,
