@@ -35,7 +35,10 @@ export default defineTool({
         spritePivot: "bottom-center",
         spriteReadOrder: "left-to-right, top-to-bottom",
         background: "pure white, cut out the alpha on your side",
+        scaleLock:
+          "With frame=true (default) sprite sheets are normalized server-side: one single scale for every cell, the same body height across all actions, and feet on a common ground line. The reply returns cell, body_height and ground_line in px.",
       },
+
     };
     return {
       content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
