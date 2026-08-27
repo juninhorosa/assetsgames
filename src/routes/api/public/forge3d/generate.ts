@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
           request.headers.get("x-forge3d-key") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        const { verifyApiKey, trackApiKeyUsage } = await import("@/lib/api-keys.server");
+        const { verifyApiKey, trackApiKeyUsage, recordApiRun } = await import("@/lib/api-keys.server");
         const legacy = process.env["FORGE3D_API_KEY"];
         const verified = await verifyApiKey(provided);
         const legacyOk = !!legacy && provided === legacy;
@@ -121,6 +121,7 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
         }
 
         const results: unknown[] = [];
+        const startedAt = Date.now();
         try {
           for (const { action, view } of jobs) {
             const finalPrompt = buildPrompt(b.prompt, profile, {
@@ -149,11 +150,26 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
           }
         } catch (e) {
           const err = e as Error & { status?: number };
-          if (verified && results.length) {
-            await trackApiKeyUsage(
-              verified.id,
-              estimateCredits({ images: results.length, size: b.size, mode: b.mode }),
-            );
+          if (verified) {
+            const credits = results.length
+              ? estimateCredits({ images: results.length, size: b.size, mode: b.mode })
+              : 0;
+            if (results.length) await trackApiKeyUsage(verified.id, credits);
+            else await trackApiKeyUsage(verified.id, 0);
+            await recordApiRun({
+              userId: verified.userId,
+              apiKeyId: verified.id,
+              kind: b.mode === "model3d" ? "model3d" : "image",
+              mode: b.mode,
+              view: profile.view,
+              size: b.size,
+              status: "error",
+              credits,
+              durationMs: Date.now() - startedAt,
+              prompt: b.prompt,
+              error: err.message.slice(0, 500),
+              meta: { images: results.length, jobs: jobs.length },
+            });
           }
           return Response.json(
             { error: err.message, partial: results },
@@ -162,10 +178,25 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
         }
 
         if (verified) {
-          await trackApiKeyUsage(
-            verified.id,
-            estimateCredits({ images: results.length, size: b.size, mode: b.mode }),
-          );
+          const credits = estimateCredits({
+            images: results.length,
+            size: b.size,
+            mode: b.mode,
+          });
+          await trackApiKeyUsage(verified.id, credits);
+          await recordApiRun({
+            userId: verified.userId,
+            apiKeyId: verified.id,
+            kind: b.mode === "model3d" ? "model3d" : "image",
+            mode: b.mode,
+            view: profile.view,
+            size: b.size,
+            status: "success",
+            credits,
+            durationMs: Date.now() - startedAt,
+            prompt: b.prompt,
+            meta: { images: results.length, jobs: jobs.length },
+          });
         }
 
         return Response.json({ styleLock: profile, count: results.length, results });

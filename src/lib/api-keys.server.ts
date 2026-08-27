@@ -83,3 +83,41 @@ export async function trackApiKeyUsage(id: string, credits: number, requests = 1
     /* telemetria não deve derrubar a geração */
   }
 }
+
+/** Registra a execução vinda da API pública no histórico (best-effort). */
+export async function recordApiRun(input: {
+  userId: string;
+  apiKeyId: string;
+  kind: string;
+  mode?: string | null;
+  view?: string | null;
+  size?: string | null;
+  status: string;
+  credits: number;
+  durationMs?: number;
+  prompt?: string | null;
+  error?: string | null;
+  meta?: Record<string, unknown>;
+}): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("generation_runs").insert({
+      user_id: input.userId,
+      api_key_id: input.apiKeyId,
+      source: "api",
+      kind: input.kind,
+      mode: input.mode ?? null,
+      view: input.view ?? null,
+      size: input.size ?? null,
+      model: "openai/gpt-image-2",
+      status: input.status,
+      credits: input.credits,
+      duration_ms: input.durationMs ?? null,
+      prompt: input.prompt ?? null,
+      error: input.error ?? null,
+      meta: (input.meta ?? {}) as never,
+    });
+  } catch {
+    /* telemetria não deve derrubar a geração */
+  }
+}

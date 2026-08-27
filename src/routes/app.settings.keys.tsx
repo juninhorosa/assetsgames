@@ -51,9 +51,19 @@ function KeysPage() {
   /** Segredo revelado uma única vez, logo após criar ou rotacionar. */
   const [revealed, setRevealed] = useState<{ key: string; label: string } | null>(null);
 
-  const { data: keys = [], isLoading } = useQuery({
+  const {
+    data: keys = [],
+    isLoading,
+    isFetching,
+    dataUpdatedAt,
+    refetch,
+  } = useQuery({
     queryKey: ["api-keys"],
     queryFn: () => list(),
+    // O consumo é atualizado pelo endpoint público; mantemos a lista viva.
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["api-keys"] });
@@ -156,7 +166,20 @@ function KeysPage() {
         </section>
       )}
 
-      <section className="mt-6 space-y-3">
+      <div className="mt-6 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+        <Button size="sm" variant="outline" disabled={isFetching} onClick={() => refetch()}>
+          <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} /> Atualizar consumo
+        </Button>
+        <span>
+          {isFetching
+            ? "atualizando…"
+            : dataUpdatedAt
+              ? `atualizado às ${new Date(dataUpdatedAt).toLocaleTimeString("pt-BR")}`
+              : ""}
+        </span>
+      </div>
+
+      <section className="mt-3 space-y-3">
         {isLoading && (
           <p className="font-mono text-xs text-muted-foreground">carregando chaves…</p>
         )}
