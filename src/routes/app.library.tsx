@@ -17,6 +17,23 @@ import { MODE_LABELS } from "@/lib/style-profile";
 import { deleteAsset, fetchAssets, fetchProjects, signedUrl } from "@/lib/assets-repo";
 
 export const Route = createFileRoute("/app/library")({
+  head: () => ({
+    meta: [
+      { title: "Biblioteca de assets — Forge3D" },
+      {
+        name: "description",
+        content:
+          "Consulte, baixe e organize todos os sprites, sprite sheets, texturas PBR e modelos gerados no seu projeto.",
+      },
+      { property: "og:title", content: "Biblioteca de assets — Forge3D" },
+      {
+        property: "og:description",
+        content: "Seu acervo de assets de jogo com grade, FPS e exportação por engine.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Library,
 });
 
