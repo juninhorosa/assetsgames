@@ -37,6 +37,9 @@ export default defineTool({
         background: "pure white, cut out the alpha on your side",
         scaleLock:
           "With frame=true (default) sprite sheets are normalized server-side: one single scale for every cell, the same body height across all actions, and feet on a common ground line. The reply returns cell, body_height and ground_line in px.",
+        targetBodyHeight:
+          "Pass target_body_height (e.g. 105) to auto-fit the canvas/cell so the character body lands at that pixel height. Scale stays proportional, so idle/walk/attack keep identical body height and ground line.",
+
       },
 
     };
