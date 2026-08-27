@@ -151,12 +151,23 @@ export default defineTool({
       });
       const raw = await generatePngBase64(finalPrompt, size);
       const framed = input.frame !== false && shouldFrameMode(mode);
-      const frameSize = input.frame_size ?? DEFAULT_SERVER_FRAMING.canvas;
+      const frameSize = input.frame_size ?? (action ? 128 : DEFAULT_SERVER_FRAMING.canvas);
       let pngBytes = base64ToBytes(raw);
-      if (framed) {
+      let sheetInfo: { cell: number; bodyHeight: number; groundLine: number } | null = null;
+      if (framed && action) {
+        const sheet = frameSpriteSheetPng(pngBytes, {
+          ...DEFAULT_SHEET_FRAMING,
+          canvas: frameSize,
+          columns: action.columns,
+          rows: action.rows,
+        });
+        pngBytes = sheet.png;
+        sheetInfo = { cell: sheet.cell, bodyHeight: sheet.bodyHeight, groundLine: sheet.groundLine };
+      } else if (framed) {
         pngBytes = frameAssetPng(pngBytes, { ...DEFAULT_SERVER_FRAMING, canvas: frameSize });
       }
       const b64 = framed ? bytesToBase64(pngBytes) : raw;
+
 
 
       const viewLabel = view ? VIEW_LABELS[view] : null;
