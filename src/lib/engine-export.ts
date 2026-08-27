@@ -307,17 +307,51 @@ export function buildEngineZip(asset: AssetExport, engine: Engine | null): Blob 
     );
   }
 
-  files["forge3d.json"] = strToU8(JSON.stringify(metadata(asset, engine), null, 2));
-  files["README.md"] = strToU8(readme(asset, engine));
+  for (const [path, bytes] of Object.entries(asset.models ?? {})) {
+    files[path] = bytes;
+  }
 
-  if (engine === "unity") {
+  files["forge3d.json"] = strToU8(JSON.stringify(metadata(asset, engine ?? "unity"), null, 2));
+
+  if (engine === "unity" || engine === null) {
     files[`Forge3D_${id}_Importer.cs`] = strToU8(unityImporter(asset));
-  } else if (engine === "unreal") {
+  }
+  if (engine === "unreal" || engine === null) {
     files[`import_${id}.py`] = strToU8(unrealScript(asset));
-  } else {
+  }
+  if (engine === "godot" || engine === null) {
     files[`${id}_material.tres`] = strToU8(godotMaterial(asset));
     if (asset.animation) files[`${id}_frames.tres`] = strToU8(godotSpriteFrames(asset));
   }
+
+  const cell = asset.frameRects?.[0];
+  const manifest = buildManifest({
+    name: asset.name,
+    slug: id,
+    mode: asset.mode,
+    prompt: asset.prompt,
+    style: asset.style,
+    engine,
+    paths: [...Object.keys(files), "forge3d.manifest.json", "AGENTS.md"].sort(),
+    maps: Object.keys(maps),
+    animation: asset.animation
+      ? {
+          name: asset.animation.name,
+          label: asset.animation.label,
+          fps: asset.animation.fps,
+          columns: asset.animation.columns,
+          rows: asset.animation.rows,
+          cellWidth: cell?.w ?? 0,
+          cellHeight: cell?.h ?? 0,
+          frameCount: asset.frames?.length ?? 0,
+          rects: asset.frameRects ?? [],
+        }
+      : undefined,
+    motion3d: asset.motion3d,
+  });
+  files["forge3d.manifest.json"] = strToU8(JSON.stringify(manifest, null, 2));
+  files["AGENTS.md"] = strToU8(buildAgentGuide(manifest));
+  files["README.md"] = strToU8(readme(asset, engine ?? "unity"));
 
   const zipped = zipSync(files, { level: 6 });
   return new Blob([zipped as unknown as BlobPart], { type: "application/zip" });
