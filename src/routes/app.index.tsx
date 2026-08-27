@@ -251,6 +251,23 @@ function Generator() {
   const [model3dStyle, setModel3dStyle] = useState<Model3dStyleKey>(DEFAULT_MODEL3D_STYLE);
   const [directionSet, setDirectionSet] = useState<string>("single");
 
+  // Consistência: referência visual travada do personagem
+  const [lockCharacter, setLockCharacter] = useState(true);
+  const [reference, setReference] = useState<string | null>(null);
+
+  // Pivô / trim
+  const [pivotMode, setPivotMode] = useState<PivotMode>("bottom-center");
+  const [pivot, setPivot] = useState<{ x: number; y: number } | null>(null);
+
+  // Fila de lote retomável
+  const [pendingQueue, setPendingQueue] = useState<QueueState | null>(null);
+  const cancelRef = useRef(false);
+  useEffect(() => {
+    setPendingQueue(loadQueue());
+  }, []);
+
+
+
 
   const params = { mode, animation, columns, rows, uiKind, model3dStyle };
   const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind, model3dStyle]);
