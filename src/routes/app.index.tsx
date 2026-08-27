@@ -1457,6 +1457,21 @@ function Generator() {
             <Scissors className="size-4" />
             Remover fundo (alpha)
           </Button>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={normalizeFrame}
+            disabled={!image || busy !== null}
+          >
+            <Crop className="size-4" />
+            Enquadrar (tamanho único)
+          </Button>
+          <p className="text-[11px] text-muted-foreground">
+            Recorta o alpha e reescala o sujeito para ocupar sempre a mesma fração de uma tela de{" "}
+            {DEFAULT_FRAMING_OPTIONS.canvas}×{DEFAULT_FRAMING_OPTIONS.canvas}px, no mesmo pivô — todos
+            os assets saem com o mesmo tamanho e margem.
+          </p>
+
           {mode === "spritesheet" && (
             <Button
               variant="secondary"
