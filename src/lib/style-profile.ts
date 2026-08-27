@@ -135,6 +135,9 @@ export interface GenerationParams {
   uiKind?: string | undefined;
   /** Variação de estilo 3D — só usada no modo `model3d`. */
   model3dStyle?: Model3dStyleKey | undefined;
+  /** Sobrescreve o sentido travado do projeto (usado na geração multidirecional). */
+  view?: ViewKey | undefined;
+
 }
 
 /** Variações controladas de estilo para a geração 3D. */
