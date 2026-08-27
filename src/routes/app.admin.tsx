@@ -1,9 +1,26 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ShieldCheck, Users, Boxes, Activity } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ShieldCheck, Users, Boxes, Activity, ScrollText } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AUDIT_ACTION_LABELS,
+  describeAudit,
+  fetchAuditLog,
+  recordAudit,
+} from "@/lib/audit-log";
 import { useAuth } from "@/hooks/use-auth.tsx";
 import { formatCredits } from "@/lib/pricing";
 import {
@@ -12,7 +29,9 @@ import {
   fetchAdminRuns,
   fetchIsAdmin,
   trialStatus,
+  updateProfileTrial,
 } from "@/lib/admin-repo";
+import type { AdminProfile } from "@/lib/admin-repo";
 
 export const Route = createFileRoute("/app/admin")({
   head: () => ({
@@ -35,7 +54,13 @@ export const Route = createFileRoute("/app/admin")({
   component: AdminPage,
 });
 
+function todayISO(offsetDays = 0) {
+  const d = new Date(Date.now() + offsetDays * 86_400_000);
+  return d.toISOString().slice(0, 10);
+}
+
 function AdminPage() {
+  const qc = useQueryClient();
   const { user } = useAuth();
   const { data: isAdmin, isLoading: checking } = useQuery({
     queryKey: ["is-admin", user?.id],
@@ -57,6 +82,18 @@ function AdminPage() {
   const { data: counts } = useQuery({
     queryKey: ["admin-counts"],
     queryFn: fetchAdminCounts,
+    enabled,
+  });
+
+  const [from, setFrom] = useState(todayISO(-30));
+  const [to, setTo] = useState(todayISO());
+  const [action, setAction] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const auditFilter = { from, to, action, search };
+  const { data: audit = [], isFetching: auditLoading } = useQuery({
+    queryKey: ["admin-audit", from, to, action, search],
+    queryFn: () => fetchAuditLog(auditFilter),
     enabled,
   });
 
@@ -125,6 +162,7 @@ function AdminPage() {
               <th className="px-4 py-2">Plano</th>
               <th className="px-4 py-2">Trial</th>
               <th className="px-4 py-2">Criada em</th>
+              <th className="px-4 py-2">Ajustar</th>
             </tr>
           </thead>
           <tbody>
@@ -147,18 +185,137 @@ function AdminPage() {
                   <td className="px-4 py-2 font-mono text-[11px] text-muted-foreground">
                     {new Date(p.created_at).toLocaleDateString("pt-BR")}
                   </td>
+                  <td className="px-4 py-2">
+                    <TrialEditor
+                      profile={p}
+                      onDone={async () => {
+                        await qc.invalidateQueries({ queryKey: ["admin-profiles"] });
+                        await qc.invalidateQueries({ queryKey: ["admin-audit"] });
+                      }}
+                    />
+                  </td>
                 </tr>
               );
             })}
             {profiles.length === 0 && (
               <tr>
-                <td className="px-4 py-6 text-sm text-muted-foreground" colSpan={4}>
+                <td className="px-4 py-6 text-sm text-muted-foreground" colSpan={5}>
                   Nenhuma conta encontrada.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </section>
+
+      <section className="panel mb-8 p-0">
+        <h2 className="flex items-center gap-2 border-b border-border px-4 py-3 font-mono text-xs uppercase tracking-wide">
+          <ScrollText className="size-3.5" />
+          Log de auditoria
+        </h2>
+
+        <div className="grid gap-3 border-b border-border px-4 py-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-1">
+            <Label className="font-mono text-[11px] uppercase">De</Label>
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="font-mono text-[11px] uppercase">Até</Label>
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="font-mono text-[11px] uppercase">Ação</Label>
+            <Select value={action} onValueChange={setAction}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {Object.entries(AUDIT_ACTION_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="font-mono text-[11px] uppercase">Busca</Label>
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="e-mail, alvo, detalhe…"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 border-b border-border px-4 py-2 font-mono text-[11px]">
+          {[
+            { label: "Hoje", days: 0 },
+            { label: "7 dias", days: -7 },
+            { label: "30 dias", days: -30 },
+            { label: "90 dias", days: -90 },
+          ].map((p) => (
+            <Button
+              key={p.label}
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setFrom(todayISO(p.days));
+                setTo(todayISO());
+              }}
+            >
+              {p.label}
+            </Button>
+          ))}
+          <span className="ml-auto self-center text-muted-foreground">
+            {auditLoading ? "carregando…" : `${audit.length} registros`}
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="font-mono text-[11px] uppercase text-muted-foreground">
+              <tr>
+                <th className="px-4 py-2">Horário</th>
+                <th className="px-4 py-2">Quem</th>
+                <th className="px-4 py-2">Ação</th>
+                <th className="px-4 py-2">Alvo</th>
+                <th className="px-4 py-2">Detalhes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {audit.map((a) => (
+                <tr key={a.id} className="border-t border-border/60 align-top">
+                  <td className="whitespace-nowrap px-4 py-2 font-mono text-[11px] text-muted-foreground">
+                    {new Date(a.created_at).toLocaleString("pt-BR")}
+                  </td>
+                  <td className="px-4 py-2 font-mono text-[11px]">
+                    {a.actor_email ?? a.actor_id.slice(0, 8)}
+                  </td>
+                  <td className="px-4 py-2">
+                    <Badge variant="secondary">
+                      {AUDIT_ACTION_LABELS[a.action] ?? a.action}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-2 font-mono text-[11px] text-muted-foreground">
+                    {a.target_type ? `${a.target_type}:${(a.target_id ?? "").slice(0, 8)}` : "—"}
+                  </td>
+                  <td className="px-4 py-2 font-mono text-[11px] text-muted-foreground">
+                    {describeAudit(a) || "—"}
+                  </td>
+                </tr>
+              ))}
+              {audit.length === 0 && (
+                <tr>
+                  <td className="px-4 py-6 text-sm text-muted-foreground" colSpan={5}>
+                    Nenhuma ação registrada no período.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="panel overflow-x-auto p-0">
@@ -224,6 +381,71 @@ function Stat({
       </div>
       <div className="mt-2 text-lg font-semibold tracking-tight">{value}</div>
       {hint && <div className="mt-1 font-mono text-[11px] text-muted-foreground">{hint}</div>}
+    </div>
+  );
+}
+
+function TrialEditor({
+  profile,
+  onDone,
+}: {
+  profile: AdminProfile;
+  onDone: () => Promise<void> | void;
+}) {
+  const [days, setDays] = useState("14");
+  const [credits, setCredits] = useState(String(profile.trial_credits));
+  const [saving, setSaving] = useState(false);
+
+  const extend = async () => {
+    const add = Math.max(0, Number(days) || 0);
+    const nextCredits = Math.max(0, Number(credits) || 0);
+    const base = Math.max(Date.now(), new Date(profile.trial_ends_at).getTime());
+    const nextEnds = new Date(base + add * 86_400_000).toISOString();
+    setSaving(true);
+    try {
+      await updateProfileTrial(profile.id, {
+        trial_ends_at: nextEnds,
+        trial_credits: nextCredits,
+      });
+      await recordAudit({
+        action: "trial.update",
+        targetType: "profile",
+        targetId: profile.id,
+        targetUserId: profile.id,
+        details: {
+          conta: profile.email ?? profile.id,
+          dias_adicionados: add,
+          creditos_de: profile.trial_credits,
+          creditos_para: nextCredits,
+          termina_em: nextEnds.slice(0, 10),
+        },
+      });
+      toast.success("Trial atualizado.");
+      await onDone();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        className="h-8 w-16"
+        value={days}
+        onChange={(e) => setDays(e.target.value)}
+        aria-label="Dias a adicionar"
+      />
+      <Input
+        className="h-8 w-20"
+        value={credits}
+        onChange={(e) => setCredits(e.target.value)}
+        aria-label="Créditos do trial"
+      />
+      <Button size="sm" variant="outline" disabled={saving} onClick={extend}>
+        {saving ? "…" : "Salvar"}
+      </Button>
     </div>
   );
 }
