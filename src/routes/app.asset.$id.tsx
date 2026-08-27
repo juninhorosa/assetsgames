@@ -118,7 +118,7 @@ function AssetDetail() {
         image,
         maps,
         frames,
-        frameRects: (anim?.frame_data?.rects ?? []) as never,
+        frameRects: anim?.frame_data.rects ?? [],
         animation:
           anim && anim.frame_data.columns && anim.frame_data.rows
             ? {
