@@ -309,9 +309,12 @@ export function buildPrompt(
         `A single game asset sprite of: ${userPrompt}.`,
         "One subject, centered, full body, isolated on a solid flat pure white background, no text, no props outside the subject, clean readable silhouette suitable for alpha cut-out.",
         framing,
+        CROSS_ACTION_SCALE_LOCK,
         styleLine + ".",
         view + extra,
       ].join(" ");
+
+
 
   }
 }
