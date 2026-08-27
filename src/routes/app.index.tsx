@@ -717,6 +717,77 @@ function Generator() {
           {busy ?? "Gerar asset"}
         </Button>
 
+        {mode === "spritesheet" && (
+          <section className="space-y-3 rounded-md border border-border bg-card/40 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+                Pack de animações
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
+                  onClick={() => setPackActions(ANIMATION_ACTIONS.map((a) => a.id))}
+                >
+                  todas
+                </button>
+                <button
+                  type="button"
+                  className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
+                  onClick={() => setPackActions([])}
+                >
+                  limpar
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Uma sheet por ação, com grade e FPS próprios, fatiada e salva na biblioteca — mesmo
+              personagem e mesmo Style Profile em todas.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {ANIMATION_ACTIONS.map((a) => {
+                const checked = packActions.includes(a.id);
+                return (
+                  <label
+                    key={a.id}
+                    className="flex cursor-pointer items-center gap-2 rounded border border-border/60 px-2 py-1.5 text-sm hover:border-primary/50"
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) =>
+                        setPackActions((prev) =>
+                          v ? [...prev, a.id] : prev.filter((id) => id !== a.id),
+                        )
+                      }
+                    />
+                    <span className="flex-1">{a.label}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {a.columns * a.rows}f · {a.fps}fps
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={generatePack}
+              disabled={busy !== null || packActions.length === 0}
+            >
+              {packProgress ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ListChecks className="size-4" />
+              )}
+              {packProgress
+                ? `Gerando pack ${packProgress.done}/${packProgress.total}`
+                : `Gerar pack (${packActions.length} ações)`}
+            </Button>
+          </section>
+        )}
+
+
+
         <div className="bg-checker flex min-h-[360px] items-center justify-center overflow-hidden rounded-md border border-border">
           {image ? (
             <img
