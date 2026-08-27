@@ -156,6 +156,17 @@ function Generator() {
   const [mode, setMode] = useState<AssetMode>("sprite");
   const [prompt, setPrompt] = useState("");
   const [animation, setAnimation] = useState<string>("walk");
+
+  function selectAction(id: string) {
+    setAnimation(id);
+    const action = findAction(id);
+    if (action) {
+      setColumns(action.columns);
+      setRows(action.rows);
+      setFps(action.fps);
+    }
+  }
+
   const [columns, setColumns] = useState(4);
   const [rows, setRows] = useState(2);
   const [uiKind, setUiKind] = useState<string>(UI_KINDS[0]!);
