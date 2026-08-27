@@ -49,6 +49,8 @@ import {
   DEFAULT_STYLE_PROFILE,
   MODE_LABELS,
   STYLE_LABELS,
+  VIEW_LABELS,
+  type ViewKey,
   buildPrompt,
   type AssetMode,
   type StyleKey,
@@ -562,6 +564,27 @@ function Generator() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Sentido / vista (travado no projeto)</Label>
+            <Select
+              value={profile.view ?? "side-right"}
+              onValueChange={(v) => setProfile({ ...profile, view: v as ViewKey })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(VIEW_LABELS).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Todos os assets do projeto são gerados neste mesmo ângulo e direção.
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Paleta</Label>

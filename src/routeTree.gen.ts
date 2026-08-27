@@ -16,6 +16,7 @@ import { Route as ApiEditAssetRouteImport } from './routes/api/edit-asset'
 import { Route as ApiGenerateAssetRouteImport } from './routes/api/generate-asset'
 import { Route as ApiRosterRouteImport } from './routes/api/roster'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppBatchRouteImport } from './routes/app.batch'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
 import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
@@ -55,6 +56,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBatchRoute = AppBatchRouteImport.update({
+  id: '/batch',
+  path: '/batch',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLibraryRoute = AppLibraryRouteImport.update({
   id: '/library',
   path: '/library',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
+  '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app/': typeof AppIndexRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
+  '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app': typeof AppIndexRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
+  '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app/': typeof AppIndexRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
+    | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
     | '/app/'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
+    | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
     | '/app'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
+    | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
     | '/app/'
@@ -206,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/batch': {
+      id: '/app/batch'
+      path: '/batch'
+      fullPath: '/app/batch'
+      preLoaderRoute: typeof AppBatchRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/library': {
       id: '/app/library'
       path: '/library'
@@ -231,12 +250,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppBatchRoute: typeof AppBatchRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAssetIdRoute: typeof AppAssetIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppBatchRoute: AppBatchRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppIndexRoute: AppIndexRoute,
   AppAssetIdRoute: AppAssetIdRoute,

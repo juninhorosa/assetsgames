@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Boxes, Images, LogOut, Wand2 } from "lucide-react";
+import { Boxes, Images, LogOut, Users, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth.tsx";
@@ -46,6 +46,7 @@ function AppLayout() {
 
   const nav = [
     { to: "/app", label: "Gerador", icon: Wand2, exact: true },
+    { to: "/app/batch", label: "Elenco em lote", icon: Users, exact: false },
     { to: "/app/library", label: "Biblioteca", icon: Images, exact: false },
   ];
 
