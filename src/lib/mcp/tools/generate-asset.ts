@@ -12,10 +12,11 @@ import {
   DEFAULT_SERVER_FRAMING,
   DEFAULT_SHEET_FRAMING,
   bytesToBase64,
-  frameAssetPng,
+  frameAssetPngDetailed,
   frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
+
 
 import { DIRECTION_SETS, VIEW_LABELS, type ViewKey } from "@/lib/style-profile";
 
@@ -81,6 +82,16 @@ export default defineTool({
       .max(2048)
       .nullable()
       .describe("Side of the normalized square canvas in px. Default 512."),
+    target_body_height: z
+      .number()
+      .int()
+      .min(16)
+      .max(1024)
+      .nullable()
+      .describe(
+        "Auto-fit the canvas/cell so the character body ends up this tall in px (e.g. 100-110). Overrides frame_size; scale stays identical across actions.",
+      ),
+
     return_images: z
       .boolean()
       .nullable()
@@ -151,21 +162,31 @@ export default defineTool({
       });
       const raw = await generatePngBase64(finalPrompt, size);
       const framed = input.frame !== false && shouldFrameMode(mode);
-      const frameSize = input.frame_size ?? (action ? 128 : DEFAULT_SERVER_FRAMING.canvas);
+      const targetBody = input.target_body_height ?? null;
+      let frameSize = input.frame_size ?? (action ? 128 : DEFAULT_SERVER_FRAMING.canvas);
       let pngBytes = base64ToBytes(raw);
       let sheetInfo: { cell: number; bodyHeight: number; groundLine: number } | null = null;
       if (framed && action) {
         const sheet = frameSpriteSheetPng(pngBytes, {
           ...DEFAULT_SHEET_FRAMING,
           canvas: frameSize,
+          ...(targetBody ? { targetBodyHeight: targetBody, minCanvas: 32, maxCanvas: 1024 } : {}),
           columns: action.columns,
           rows: action.rows,
         });
         pngBytes = sheet.png;
+        frameSize = sheet.cell;
         sheetInfo = { cell: sheet.cell, bodyHeight: sheet.bodyHeight, groundLine: sheet.groundLine };
       } else if (framed) {
-        pngBytes = frameAssetPng(pngBytes, { ...DEFAULT_SERVER_FRAMING, canvas: frameSize });
+        const out = frameAssetPngDetailed(pngBytes, {
+          ...DEFAULT_SERVER_FRAMING,
+          canvas: frameSize,
+          ...(targetBody ? { targetBodyHeight: targetBody, maxCanvas: 2048 } : {}),
+        });
+        pngBytes = out.png;
+        frameSize = out.canvas;
       }
+
       const b64 = framed ? bytesToBase64(pngBytes) : raw;
 
 

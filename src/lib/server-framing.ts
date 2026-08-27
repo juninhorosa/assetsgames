@@ -14,6 +14,15 @@ export interface ServerFramingOptions {
   pivot: "bottom-center" | "center";
   /** Tolerância do branco de fundo (0..255). */
   tolerance: number;
+  /**
+   * Altura desejada do personagem na tela (px). Quando definida, a tela é
+   * auto-ajustada para que o corpo saia exatamente nesta altura, mantendo a
+   * mesma escala relativa (não reintroduz diferença entre ações).
+   */
+  targetBodyHeight?: number;
+  /** Limites da tela auto-ajustada (px). */
+  minCanvas?: number;
+  maxCanvas?: number;
 }
 
 export const DEFAULT_SERVER_FRAMING: ServerFramingOptions = {
@@ -22,6 +31,13 @@ export const DEFAULT_SERVER_FRAMING: ServerFramingOptions = {
   pivot: "bottom-center",
   tolerance: 24,
 };
+
+function clampCanvas(value: number, opts: ServerFramingOptions, floor: number): number {
+  const min = Math.max(floor, Math.round(opts.minCanvas ?? floor));
+  const max = Math.max(min, Math.round(opts.maxCanvas ?? 2048));
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
 
 interface Rgba {
   width: number;
@@ -154,25 +170,42 @@ function resample(img: Rgba, src: Bounds, dw: number, dh: number): Rgba {
   return { width: dw, height: dh, data: out };
 }
 
+export interface AssetFramingResult {
+  png: Uint8Array;
+  /** Lado real da tela usada (px) — pode diferir de opts.canvas no auto-ajuste. */
+  canvas: number;
+  /** Altura do sujeito depois da normalização (px). */
+  bodyHeight: number;
+}
+
 /**
  * Recebe um PNG (bytes), devolve um PNG quadrado com fundo transparente,
  * sujeito centrado, escala fixa e o mesmo pivô — todos os assets saem
- * exatamente no mesmo tamanho e enquadramento.
+ * exatamente no mesmo tamanho e enquadramento. Com `targetBodyHeight` a tela
+ * é auto-dimensionada para o sujeito sair na altura pedida.
  */
-export function frameAssetPng(
+export function frameAssetPngDetailed(
   bytes: Uint8Array,
   opts: ServerFramingOptions = DEFAULT_SERVER_FRAMING,
-): Uint8Array {
+): AssetFramingResult {
   const img = toRgba8(decode(bytes));
   keyOutWhite(img, opts.tolerance);
   const bounds = alphaBounds(img);
-  const size = Math.max(64, Math.round(opts.canvas));
+  const fill = Math.min(0.98, Math.max(0.4, opts.fill));
+  let size = Math.max(64, Math.round(opts.canvas));
+  if (bounds && opts.targetBodyHeight && opts.targetBodyHeight > 0) {
+    // dh = bounds.h * min(size*fill/w, size*fill/h) → resolve size para o alvo.
+    const needed = (opts.targetBodyHeight * Math.max(bounds.w, bounds.h)) / (fill * bounds.h);
+    size = clampCanvas(needed, opts, 64);
+  }
   const canvas = new Uint8ClampedArray(size * size * 4);
+  let bodyHeight = 0;
   if (bounds) {
-    const target = size * Math.min(0.98, Math.max(0.4, opts.fill));
+    const target = size * fill;
     const scale = Math.min(target / bounds.w, target / bounds.h);
     const dw = Math.max(1, Math.round(bounds.w * scale));
     const dh = Math.max(1, Math.round(bounds.h * scale));
+    bodyHeight = dh;
     const margin = Math.round((size - target) / 2);
     const dx = Math.round((size - dw) / 2);
     const dy = opts.pivot === "bottom-center" ? size - margin - dh : Math.round((size - dh) / 2);
@@ -192,8 +225,20 @@ export function frameAssetPng(
       }
     }
   }
-  return encode({ width: size, height: size, data: canvas, channels: 4, depth: 8 });
+  return {
+    png: encode({ width: size, height: size, data: canvas, channels: 4, depth: 8 }),
+    canvas: size,
+    bodyHeight,
+  };
 }
+
+export function frameAssetPng(
+  bytes: Uint8Array,
+  opts: ServerFramingOptions = DEFAULT_SERVER_FRAMING,
+): Uint8Array {
+  return frameAssetPngDetailed(bytes, opts).png;
+}
+
 
 export function base64ToBytes(b64: string): Uint8Array {
   const binary = atob(b64);
@@ -261,9 +306,8 @@ export function frameSpriteSheetPng(
   const rows = Math.max(1, Math.round(opts.rows));
   const cw = Math.floor(img.width / cols);
   const ch = Math.floor(img.height / rows);
-  const cell = Math.max(32, Math.round(opts.canvas));
   const fill = Math.min(0.92, Math.max(0.3, opts.fill));
-  const margin = Math.round(cell * 0.06);
+
 
   // Bounds de cada célula, em coordenadas absolutas da imagem.
   const cells: (Bounds | null)[] = [];
@@ -280,8 +324,27 @@ export function frameSpriteSheetPng(
   }
 
   const heights = cells.filter((b): b is Bounds => !!b).map((b) => b.h);
-  const reference = heights.length ? percentile(heights, opts.referencePercentile) : ch;
-  let scale = (cell * fill) / Math.max(1, reference);
+  const reference = Math.max(1, heights.length ? percentile(heights, opts.referencePercentile) : ch);
+
+  // Fator de escala por unidade de célula: a escala final é sempre
+  // proporcional ao lado da célula, então o mesmo fator vale para qualquer
+  // tamanho e o alinhamento entre ações (idle/attack) não muda.
+  const scalePerCell = (() => {
+    let k = fill / reference;
+    for (const b of cells) {
+      if (!b) continue;
+      k = Math.min(k, 1 / b.w, 1 / b.h);
+    }
+    return k;
+  })();
+
+  let cell = Math.max(32, Math.round(opts.canvas));
+  if (opts.targetBodyHeight && opts.targetBodyHeight > 0) {
+    cell = clampCanvas(opts.targetBodyHeight / (scalePerCell * reference), opts, 32);
+  }
+  const margin = Math.round(cell * 0.06);
+
+  let scale = (cell * fill) / reference;
   // Clamp global: nenhum quadro pode estourar a célula (mantém escala única).
   // Usa a célula inteira como limite para que quadros extremos (arma erguida,
   // salto) apenas invadam a margem em vez de encolher todo o conjunto.
@@ -290,6 +353,7 @@ export function frameSpriteSheetPng(
     if (!b) continue;
     scale = Math.min(scale, usable / b.w, usable / b.h);
   }
+
 
   const outW = cell * cols;
   const outH = cell * rows;

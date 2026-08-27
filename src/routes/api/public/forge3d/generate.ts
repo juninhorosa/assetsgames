@@ -16,7 +16,7 @@ import {
   DEFAULT_SHEET_FRAMING,
   base64ToBytes,
   bytesToBase64,
-  frameAssetPng,
+  frameAssetPngDetailed,
   frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
@@ -59,6 +59,9 @@ const BodySchema = z.object({
   frameSize: z.number().int().min(64).max(2048).default(512),
   /** Lado da célula (px) do sprite sheet normalizado. */
   cellSize: z.number().int().min(32).max(512).default(128),
+  /** Altura alvo do corpo na tela (px). Auto-ajusta frameSize/cellSize. */
+  targetBodyHeight: z.number().int().min(16).max(1024).nullable().default(null),
+
 
 });
 
@@ -156,24 +159,32 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
             });
             const image = await generateImage(finalPrompt, b.size, key);
             const framed = b.frame && shouldFrameMode(b.mode);
+            const targetBody = b.targetBodyHeight;
             let finalImage = image;
+            let canvasSize = b.frameSize;
+            let bodyHeight: number | null = null;
             let sheet: { cell: number; bodyHeight: number; groundLine: number } | null = null;
             if (framed && action) {
               const out = frameSpriteSheetPng(await toPngBytes(image), {
                 ...DEFAULT_SHEET_FRAMING,
                 canvas: b.cellSize,
+                ...(targetBody
+                  ? { targetBodyHeight: targetBody, minCanvas: 32, maxCanvas: 1024 }
+                  : {}),
                 columns: action.columns,
                 rows: action.rows,
               });
               sheet = { cell: out.cell, bodyHeight: out.bodyHeight, groundLine: out.groundLine };
               finalImage = `data:image/png;base64,${bytesToBase64(out.png)}`;
             } else if (framed) {
-              finalImage = `data:image/png;base64,${bytesToBase64(
-                frameAssetPng(await toPngBytes(image), {
-                  ...DEFAULT_SERVER_FRAMING,
-                  canvas: b.frameSize,
-                }),
-              )}`;
+              const out = frameAssetPngDetailed(await toPngBytes(image), {
+                ...DEFAULT_SERVER_FRAMING,
+                canvas: b.frameSize,
+                ...(targetBody ? { targetBodyHeight: targetBody, maxCanvas: 2048 } : {}),
+              });
+              canvasSize = out.canvas;
+              bodyHeight = out.bodyHeight;
+              finalImage = `data:image/png;base64,${bytesToBase64(out.png)}`;
             }
             results.push({
               mode: b.mode,
@@ -184,10 +195,12 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
               ...(framed && !sheet
                 ? {
                     framed: true,
-                    canvas: { width: b.frameSize, height: b.frameSize },
+                    canvas: { width: canvasSize, height: canvasSize },
+                    ...(bodyHeight ? { bodyHeight } : {}),
                     pivot: "bottom-center",
                   }
                 : {}),
+
               ...(sheet
                 ? {
                     framed: true,

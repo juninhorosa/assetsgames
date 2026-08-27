@@ -329,6 +329,19 @@
               ],
               "description": "Side of the normalized square canvas in px. Default 512."
             },
+            "target_body_height": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 16,
+                  "maximum": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Auto-fit the canvas/cell so the character body ends up this tall in px (e.g. 100-110). Overrides frame_size; scale stays identical across actions."
+            },
             "return_images": {
               "anyOf": [
                 {
@@ -353,6 +366,7 @@
             "size",
             "frame",
             "frame_size",
+            "target_body_height",
             "return_images"
           ]
         },
