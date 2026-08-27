@@ -1330,6 +1330,31 @@ function Generator() {
           </section>
         )}
 
+        {frames.length > 0 && (
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+                Editor de quadros — {frames.length} quadros
+              </h2>
+              {pivot && (
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  pivô {pivot.x.toFixed(0)},{pivot.y.toFixed(0)} · célula {cell.w}×{cell.h}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Reordene, duplique ou remova quadros — a sheet é recomposta automaticamente antes de
+              salvar e exportar.
+            </p>
+            <FrameEditor
+              frames={frames}
+              pixelated={profile.style === "pixel-art"}
+              onChange={applyFrameEdits}
+            />
+          </section>
+        )}
+
+
         {motion3d && (
           <section className="space-y-3">
             <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
