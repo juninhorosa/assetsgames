@@ -8,7 +8,14 @@ import {
   generatePngBase64,
   resolveProfile,
 } from "../generate";
+import {
+  DEFAULT_SERVER_FRAMING,
+  bytesToBase64,
+  frameAssetPng,
+  shouldFrameMode,
+} from "@/lib/server-framing";
 import { DIRECTION_SETS, VIEW_LABELS, type ViewKey } from "@/lib/style-profile";
+
 
 const MAX_JOBS = 4;
 
@@ -58,10 +65,24 @@ export default defineTool({
       .enum(["1024x1024", "1024x1536", "1536x1024"])
       .nullable()
       .describe("Image size, default 1024x1024."),
+    frame: z
+      .boolean()
+      .nullable()
+      .describe(
+        "Normalize framing: cut out the white background and fit the subject to a fixed square canvas with the same scale and pivot, so every asset has the same size. Default true for sprite/ui/model3d.",
+      ),
+    frame_size: z
+      .number()
+      .int()
+      .min(64)
+      .max(2048)
+      .nullable()
+      .describe("Side of the normalized square canvas in px. Default 512."),
     return_images: z
       .boolean()
       .nullable()
       .describe("Include the PNG bytes in the reply. Default true; false returns only URLs."),
+
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {
@@ -125,7 +146,15 @@ export default defineTool({
         uiKind: input.ui_kind,
         model3dStyle: input.model3d_style,
       });
-      const b64 = await generatePngBase64(finalPrompt, size);
+      const raw = await generatePngBase64(finalPrompt, size);
+      const framed = input.frame !== false && shouldFrameMode(mode);
+      const frameSize = input.frame_size ?? DEFAULT_SERVER_FRAMING.canvas;
+      let pngBytes = base64ToBytes(raw);
+      if (framed) {
+        pngBytes = frameAssetPng(pngBytes, { ...DEFAULT_SERVER_FRAMING, canvas: frameSize });
+      }
+      const b64 = framed ? bytesToBase64(pngBytes) : raw;
+
 
       const viewLabel = view ? VIEW_LABELS[view] : null;
       const name = [
@@ -152,6 +181,7 @@ export default defineTool({
             ...(action ? { animation: action.id, columns: action.columns, rows: action.rows } : {}),
             ...(input.model3d_style ? { model3dStyle: input.model3d_style } : {}),
             ...(input.ui_kind ? { uiKind: input.ui_kind } : {}),
+            ...(framed ? { framed: true, frameSize, pivot: "bottom-center" } : {}),
             source: "mcp",
           } as unknown as never,
           metadata: { frameCount: action ? action.columns * action.rows : 0 } as unknown as never,
@@ -164,7 +194,8 @@ export default defineTool({
       const path = `${uid}/${projectId}/${assetId}/source.png`;
       const { error: upErr } = await supabase.storage
         .from("assets")
-        .upload(path, base64ToBytes(b64), { contentType: "image/png", upsert: true });
+        .upload(path, pngBytes, { contentType: "image/png", upsert: true });
+
       if (upErr) throw new ToolError(upErr.message);
       await supabase.from("assets").update({ storage_path: path }).eq("id", assetId);
 
@@ -194,9 +225,13 @@ export default defineTool({
               read_order: "left-to-right, top-to-bottom",
             }
           : {}),
+        ...(framed
+          ? { framed: true, canvas: { width: frameSize, height: frameSize }, pivot: "bottom-center" }
+          : {}),
         download_url: signed.data?.signedUrl ?? null,
         prompt: finalPrompt,
       });
+
       if (input.return_images !== false) {
         images.push({ type: "image", data: b64, mimeType: "image/png" });
       }

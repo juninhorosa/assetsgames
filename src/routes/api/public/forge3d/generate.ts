@@ -11,6 +11,13 @@ import {
   type Model3dStyleKey,
 } from "@/lib/style-profile";
 import { estimateCredits } from "@/lib/pricing";
+import {
+  DEFAULT_SERVER_FRAMING,
+  base64ToBytes,
+  bytesToBase64,
+  frameAssetPng,
+  shouldFrameMode,
+} from "@/lib/server-framing";
 
 const MAX_JOBS = 8;
 
@@ -44,7 +51,17 @@ const BodySchema = z.object({
   extra: z.string().nullable().default(null),
   size: z.enum(["1024x1024", "1024x1536", "1536x1024"]).default("1024x1024"),
   uiKind: z.string().nullable().default(null),
+  /** Enquadramento normalizado: fundo removido, escala/pivô fixos, tela quadrada. */
+  frame: z.boolean().default(true),
+  frameSize: z.number().int().min(64).max(2048).default(512),
 });
+
+/** Baixa a imagem gerada e devolve os bytes PNG. */
+async function toPngBytes(image: string): Promise<Uint8Array> {
+  if (image.startsWith("data:")) return base64ToBytes(image.split(",")[1] ?? "");
+  const res = await fetch(image);
+  return new Uint8Array(await res.arrayBuffer());
+}
 
 async function generateImage(prompt: string, size: string, key: string): Promise<string> {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
@@ -132,12 +149,28 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
               ...(view ? { view } : {}),
             });
             const image = await generateImage(finalPrompt, b.size, key);
+            const framed = b.frame && shouldFrameMode(b.mode);
+            const finalImage = framed
+              ? `data:image/png;base64,${bytesToBase64(
+                  frameAssetPng(await toPngBytes(image), {
+                    ...DEFAULT_SERVER_FRAMING,
+                    canvas: b.frameSize,
+                  }),
+                )}`
+              : image;
             results.push({
               mode: b.mode,
               action: action?.id ?? null,
               view: view ?? profile.view,
               prompt: finalPrompt,
-              image,
+              image: finalImage,
+              ...(framed
+                ? {
+                    framed: true,
+                    canvas: { width: b.frameSize, height: b.frameSize },
+                    pivot: "bottom-center",
+                  }
+                : {}),
               ...(action
                 ? {
                     grid: { columns: action.columns, rows: action.rows },
