@@ -76,8 +76,12 @@ function AppLayout() {
             );
           })}
           <Button size="sm" variant="ghost" asChild>
+            <Link to="/docs/connect">Conectar IA</Link>
+          </Button>
+          <Button size="sm" variant="ghost" asChild>
             <Link to="/docs/architecture">Arquitetura</Link>
           </Button>
+
         </nav>
 
         <div className="flex items-center gap-2">

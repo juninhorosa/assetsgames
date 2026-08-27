@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as ApiEditAssetRouteImport } from './routes/api/edit-asset'
 import { Route as ApiGenerateAssetRouteImport } from './routes/api/generate-asset'
 import { Route as ApiRosterRouteImport } from './routes/api/roster'
@@ -19,6 +22,9 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppBatchRouteImport } from './routes/app.batch'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
 import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
+import { Route as DocsConnectRouteImport } from './routes/docs.connect'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
 import { Route as ApiPublicForge3dCapabilitiesRouteImport } from './routes/api/public/forge3d/capabilities'
 import { Route as ApiPublicForge3dGenerateRouteImport } from './routes/api/public/forge3d/generate'
@@ -38,6 +44,23 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiEditAssetRoute = ApiEditAssetRouteImport.update({
   id: '/api/edit-asset',
   path: '/api/edit-asset',
@@ -73,6 +96,22 @@ const DocsArchitectureRoute = DocsArchitectureRouteImport.update({
   path: '/docs/architecture',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsConnectRoute = DocsConnectRouteImport.update({
+  id: '/docs/connect',
+  path: '/docs/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppAssetIdRoute = AppAssetIdRouteImport.update({
   id: '/asset/$id',
   path: '/asset/$id',
@@ -95,13 +134,19 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/connect': typeof DocsConnectRoute
   '/app/': typeof AppIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
@@ -109,13 +154,19 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/connect': typeof DocsConnectRoute
   '/app': typeof AppIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
@@ -125,13 +176,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/connect': typeof DocsConnectRoute
   '/app/': typeof AppIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
@@ -142,13 +199,19 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
+    | '/docs/connect'
     | '/app/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
@@ -156,13 +219,19 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
+    | '/docs/connect'
     | '/app'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
@@ -171,13 +240,19 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/mcp'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/api/edit-asset'
     | '/api/generate-asset'
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
+    | '/docs/connect'
     | '/app/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
@@ -187,10 +262,16 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  McpRoute: typeof McpRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiEditAssetRoute: typeof ApiEditAssetRoute
   ApiGenerateAssetRoute: typeof ApiGenerateAssetRoute
   ApiRosterRoute: typeof ApiRosterRoute
   DocsArchitectureRoute: typeof DocsArchitectureRoute
+  DocsConnectRoute: typeof DocsConnectRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicForge3dCapabilitiesRoute: typeof ApiPublicForge3dCapabilitiesRoute
   ApiPublicForge3dGenerateRoute: typeof ApiPublicForge3dGenerateRoute
 }
@@ -216,6 +297,27 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/edit-asset': {
@@ -267,6 +369,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsArchitectureRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/connect': {
+      id: '/docs/connect'
+      path: '/docs/connect'
+      fullPath: '/docs/connect'
+      preLoaderRoute: typeof DocsConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/asset/$id': {
       id: '/app/asset/$id'
       path: '/asset/$id'
@@ -311,10 +434,17 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  McpRoute: McpRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiEditAssetRoute: ApiEditAssetRoute,
   ApiGenerateAssetRoute: ApiGenerateAssetRoute,
   ApiRosterRoute: ApiRosterRoute,
   DocsArchitectureRoute: DocsArchitectureRoute,
+  DocsConnectRoute: DocsConnectRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicForge3dCapabilitiesRoute: ApiPublicForge3dCapabilitiesRoute,
   ApiPublicForge3dGenerateRoute: ApiPublicForge3dGenerateRoute,
 }

@@ -11,7 +11,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth.tsx";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+    const n = s["next"];
+    return typeof n === "string" && n.startsWith("/") ? { next: n } : {};
+  },
   head: () => ({
+
+
     meta: [
       { title: "Entrar — Forge3D Asset Studio" },
       {
@@ -33,15 +39,27 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const { session, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
+  /** Volta para onde o usuário estava (ex.: consentimento OAuth) ou para o studio. */
+  function goNext() {
+    if (next) {
+      window.location.href = next;
+      return;
+    }
+    navigate({ to: "/app" });
+  }
+
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/app" });
-  }, [loading, session, navigate]);
+    if (!loading && session) goNext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, session]);
+
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
@@ -52,7 +70,7 @@ function AuthPage() {
       toast.error(error.message);
       return;
     }
-    navigate({ to: "/app" });
+    goNext();
   }
 
   async function signUp(e: React.FormEvent) {
@@ -63,7 +81,7 @@ function AuthPage() {
       password,
       options: {
         data: { display_name: name || email.split("@")[0] },
-        emailRedirectTo: `${window.location.origin}/app`,
+        emailRedirectTo: `${window.location.origin}${next ?? "/app"}`,
       },
     });
     setBusy(false);
@@ -76,7 +94,7 @@ function AuthPage() {
 
   async function google() {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: next ? `${window.location.origin}${next}` : window.location.origin,
     });
     if (result.error) {
       toast.error("Não foi possível entrar com Google.");
@@ -89,8 +107,9 @@ function AuthPage() {
       toast.error("O Google autorizou o acesso, mas a sessão não foi salva. Tente novamente.");
       return;
     }
-    navigate({ to: "/app" });
+    goNext();
   }
+
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
