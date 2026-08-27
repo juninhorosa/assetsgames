@@ -228,6 +228,8 @@ export function buildPrompt(
   const styleLine = `${STYLE_PROMPTS[profile.style]}, color palette: ${profile.palette}, ${detailWord(profile.detail)}`;
   const extra = profile.extra?.trim() ? ` Art direction notes: ${profile.extra.trim()}.` : "";
   const view = `Camera and orientation lock: ${viewLine(profile, params.view)}.`;
+  const framing = FRAMING_LOCK;
+
 
   switch (params.mode) {
     case "spritesheet": {
