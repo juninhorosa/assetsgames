@@ -14,6 +14,15 @@ export interface ServerFramingOptions {
   pivot: "bottom-center" | "center";
   /** Tolerância do branco de fundo (0..255). */
   tolerance: number;
+  /**
+   * Altura desejada do personagem na tela (px). Quando definida, a tela é
+   * auto-ajustada para que o corpo saia exatamente nesta altura, mantendo a
+   * mesma escala relativa (não reintroduz diferença entre ações).
+   */
+  targetBodyHeight?: number;
+  /** Limites da tela auto-ajustada (px). */
+  minCanvas?: number;
+  maxCanvas?: number;
 }
 
 export const DEFAULT_SERVER_FRAMING: ServerFramingOptions = {
@@ -22,6 +31,13 @@ export const DEFAULT_SERVER_FRAMING: ServerFramingOptions = {
   pivot: "bottom-center",
   tolerance: 24,
 };
+
+function clampCanvas(value: number, opts: ServerFramingOptions, floor: number): number {
+  const min = Math.max(floor, Math.round(opts.minCanvas ?? floor));
+  const max = Math.max(min, Math.round(opts.maxCanvas ?? 2048));
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
 
 interface Rgba {
   width: number;
