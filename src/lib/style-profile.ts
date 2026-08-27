@@ -224,6 +224,15 @@ export const FRAMING_LOCK =
   "Framing lock: square composition, subject perfectly centered horizontally, standing on an invisible baseline at the same height in every image, the subject occupies exactly 85% of the frame height with a constant empty safe margin of about 7% on all four sides, nothing touching or cropped by the frame edges, identical zoom level, identical subject scale and identical distance from camera in every image so all assets can be trimmed to the same size.";
 
 /**
+ * Trava de escala entre ações: o corpo tem sempre a mesma altura, independente
+ * da pose, e o excedente (arma erguida, salto) usa a margem — nunca aumenta o
+ * personagem. Também exige a arma colada à mão.
+ */
+export const CROSS_ACTION_SCALE_LOCK =
+  "Cross-action scale lock: the character body is drawn at exactly the same size in every frame and in every animation — idle, walk, run, attack, jump, hurt and death all use the identical character height measured from the feet to the top of the head, the same limb thickness and the same head-to-body ratio; never zoom in or enlarge the character for action poses. Raised weapons, swings, jumps and capes extend into the empty margin instead of scaling the figure up or down. Feet always rest on one common ground line at the same height. Every prop and weapon stays rigidly attached to the hand or body it belongs to, never detached, never floating, no loose blade fragments or separated pieces.";
+
+
+/**
  * Style profile + mode template = the consistency mechanism.
  * The same profile is injected into every prompt of a project.
  */
@@ -256,7 +265,9 @@ export function buildPrompt(
         `Every cell shows the same character with identical proportions, identical outfit, identical colors, identical scale and identical camera angle, centered inside its cell, feet on the same baseline; only the pose changes between cells.`,
         `Uniform cell size, no gaps, no borders, no numbers, no captions, no onion-skin ghosting, no drop shadow outside the cell.`,
         `Inside every cell the character keeps the same scale and a constant empty safe margin around it (about 7% of the cell), never touching or crossing the cell edges, so all frames trim to the same size.`,
+        CROSS_ACTION_SCALE_LOCK,
         `Solid flat pure white background so it can be keyed out.`,
+
         styleLine + ".",
         view,
         "Full body, consistent proportions and the exact same facing direction across every frame." +
@@ -298,9 +309,12 @@ export function buildPrompt(
         `A single game asset sprite of: ${userPrompt}.`,
         "One subject, centered, full body, isolated on a solid flat pure white background, no text, no props outside the subject, clean readable silhouette suitable for alpha cut-out.",
         framing,
+        CROSS_ACTION_SCALE_LOCK,
         styleLine + ".",
         view + extra,
       ].join(" ");
+
+
 
   }
 }

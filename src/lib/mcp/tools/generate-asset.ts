@@ -10,10 +10,13 @@ import {
 } from "../generate";
 import {
   DEFAULT_SERVER_FRAMING,
+  DEFAULT_SHEET_FRAMING,
   bytesToBase64,
   frameAssetPng,
+  frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
+
 import { DIRECTION_SETS, VIEW_LABELS, type ViewKey } from "@/lib/style-profile";
 
 
@@ -148,12 +151,23 @@ export default defineTool({
       });
       const raw = await generatePngBase64(finalPrompt, size);
       const framed = input.frame !== false && shouldFrameMode(mode);
-      const frameSize = input.frame_size ?? DEFAULT_SERVER_FRAMING.canvas;
+      const frameSize = input.frame_size ?? (action ? 128 : DEFAULT_SERVER_FRAMING.canvas);
       let pngBytes = base64ToBytes(raw);
-      if (framed) {
+      let sheetInfo: { cell: number; bodyHeight: number; groundLine: number } | null = null;
+      if (framed && action) {
+        const sheet = frameSpriteSheetPng(pngBytes, {
+          ...DEFAULT_SHEET_FRAMING,
+          canvas: frameSize,
+          columns: action.columns,
+          rows: action.rows,
+        });
+        pngBytes = sheet.png;
+        sheetInfo = { cell: sheet.cell, bodyHeight: sheet.bodyHeight, groundLine: sheet.groundLine };
+      } else if (framed) {
         pngBytes = frameAssetPng(pngBytes, { ...DEFAULT_SERVER_FRAMING, canvas: frameSize });
       }
       const b64 = framed ? bytesToBase64(pngBytes) : raw;
+
 
 
       const viewLabel = view ? VIEW_LABELS[view] : null;
@@ -182,6 +196,8 @@ export default defineTool({
             ...(input.model3d_style ? { model3dStyle: input.model3d_style } : {}),
             ...(input.ui_kind ? { uiKind: input.ui_kind } : {}),
             ...(framed ? { framed: true, frameSize, pivot: "bottom-center" } : {}),
+            ...(sheetInfo ? { cellSize: sheetInfo.cell, bodyHeight: sheetInfo.bodyHeight, groundLine: sheetInfo.groundLine } : {}),
+
             source: "mcp",
           } as unknown as never,
           metadata: { frameCount: action ? action.columns * action.rows : 0 } as unknown as never,
@@ -228,6 +244,14 @@ export default defineTool({
         ...(framed
           ? { framed: true, canvas: { width: frameSize, height: frameSize }, pivot: "bottom-center" }
           : {}),
+        ...(sheetInfo
+          ? {
+              cell: { width: sheetInfo.cell, height: sheetInfo.cell },
+              body_height: sheetInfo.bodyHeight,
+              ground_line: sheetInfo.groundLine,
+            }
+          : {}),
+
         download_url: signed.data?.signedUrl ?? null,
         prompt: finalPrompt,
       });

@@ -13,11 +13,14 @@ import {
 import { estimateCredits } from "@/lib/pricing";
 import {
   DEFAULT_SERVER_FRAMING,
+  DEFAULT_SHEET_FRAMING,
   base64ToBytes,
   bytesToBase64,
   frameAssetPng,
+  frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
+
 
 const MAX_JOBS = 8;
 
@@ -54,6 +57,9 @@ const BodySchema = z.object({
   /** Enquadramento normalizado: fundo removido, escala/pivô fixos, tela quadrada. */
   frame: z.boolean().default(true),
   frameSize: z.number().int().min(64).max(2048).default(512),
+  /** Lado da célula (px) do sprite sheet normalizado. */
+  cellSize: z.number().int().min(32).max(512).default(128),
+
 });
 
 /** Baixa a imagem gerada e devolve os bytes PNG. */
@@ -150,24 +156,44 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
             });
             const image = await generateImage(finalPrompt, b.size, key);
             const framed = b.frame && shouldFrameMode(b.mode);
-            const finalImage = framed
-              ? `data:image/png;base64,${bytesToBase64(
-                  frameAssetPng(await toPngBytes(image), {
-                    ...DEFAULT_SERVER_FRAMING,
-                    canvas: b.frameSize,
-                  }),
-                )}`
-              : image;
+            let finalImage = image;
+            let sheet: { cell: number; bodyHeight: number; groundLine: number } | null = null;
+            if (framed && action) {
+              const out = frameSpriteSheetPng(await toPngBytes(image), {
+                ...DEFAULT_SHEET_FRAMING,
+                canvas: b.cellSize,
+                columns: action.columns,
+                rows: action.rows,
+              });
+              sheet = { cell: out.cell, bodyHeight: out.bodyHeight, groundLine: out.groundLine };
+              finalImage = `data:image/png;base64,${bytesToBase64(out.png)}`;
+            } else if (framed) {
+              finalImage = `data:image/png;base64,${bytesToBase64(
+                frameAssetPng(await toPngBytes(image), {
+                  ...DEFAULT_SERVER_FRAMING,
+                  canvas: b.frameSize,
+                }),
+              )}`;
+            }
             results.push({
               mode: b.mode,
               action: action?.id ?? null,
               view: view ?? profile.view,
               prompt: finalPrompt,
               image: finalImage,
-              ...(framed
+              ...(framed && !sheet
                 ? {
                     framed: true,
                     canvas: { width: b.frameSize, height: b.frameSize },
+                    pivot: "bottom-center",
+                  }
+                : {}),
+              ...(sheet
+                ? {
+                    framed: true,
+                    cell: { width: sheet.cell, height: sheet.cell },
+                    bodyHeight: sheet.bodyHeight,
+                    groundLine: sheet.groundLine,
                     pivot: "bottom-center",
                   }
                 : {}),
@@ -180,6 +206,7 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
                   }
                 : {}),
             });
+
           }
         } catch (e) {
           const err = e as Error & { status?: number };
