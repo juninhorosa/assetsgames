@@ -156,24 +156,44 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
             });
             const image = await generateImage(finalPrompt, b.size, key);
             const framed = b.frame && shouldFrameMode(b.mode);
-            const finalImage = framed
-              ? `data:image/png;base64,${bytesToBase64(
-                  frameAssetPng(await toPngBytes(image), {
-                    ...DEFAULT_SERVER_FRAMING,
-                    canvas: b.frameSize,
-                  }),
-                )}`
-              : image;
+            let finalImage = image;
+            let sheet: { cell: number; bodyHeight: number; groundLine: number } | null = null;
+            if (framed && action) {
+              const out = frameSpriteSheetPng(await toPngBytes(image), {
+                ...DEFAULT_SHEET_FRAMING,
+                canvas: b.cellSize,
+                columns: action.columns,
+                rows: action.rows,
+              });
+              sheet = { cell: out.cell, bodyHeight: out.bodyHeight, groundLine: out.groundLine };
+              finalImage = `data:image/png;base64,${bytesToBase64(out.png)}`;
+            } else if (framed) {
+              finalImage = `data:image/png;base64,${bytesToBase64(
+                frameAssetPng(await toPngBytes(image), {
+                  ...DEFAULT_SERVER_FRAMING,
+                  canvas: b.frameSize,
+                }),
+              )}`;
+            }
             results.push({
               mode: b.mode,
               action: action?.id ?? null,
               view: view ?? profile.view,
               prompt: finalPrompt,
               image: finalImage,
-              ...(framed
+              ...(framed && !sheet
                 ? {
                     framed: true,
                     canvas: { width: b.frameSize, height: b.frameSize },
+                    pivot: "bottom-center",
+                  }
+                : {}),
+              ...(sheet
+                ? {
+                    framed: true,
+                    cell: { width: sheet.cell, height: sheet.cell },
+                    bodyHeight: sheet.bodyHeight,
+                    groundLine: sheet.groundLine,
                     pivot: "bottom-center",
                   }
                 : {}),
@@ -186,6 +206,7 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
                   }
                 : {}),
             });
+
           }
         } catch (e) {
           const err = e as Error & { status?: number };
