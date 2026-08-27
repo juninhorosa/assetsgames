@@ -211,7 +211,126 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-/** Enquadra apenas os modos de sujeito isolado; texturas/sheets ficam intactas. */
-export function shouldFrameMode(mode: string): boolean {
-  return mode === "sprite" || mode === "ui" || mode === "model3d";
+export interface SheetFramingOptions extends ServerFramingOptions {
+  columns: number;
+  rows: number;
+  /**
+   * Percentil das alturas de célula usado como "altura de referência" do corpo.
+   * Percentil baixo ignora quadros com arma erguida/salto, o que estabiliza a
+   * escala entre ações diferentes (idle vs attack).
+   */
+  referencePercentile: number;
 }
+
+export const DEFAULT_SHEET_FRAMING: Omit<SheetFramingOptions, "columns" | "rows"> = {
+  ...DEFAULT_SERVER_FRAMING,
+  fill: 0.72,
+  referencePercentile: 0.3,
+};
+
+function percentile(values: number[], p: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * p)));
+  return sorted[idx]!;
+}
+
+export interface SheetFramingResult {
+  png: Uint8Array;
+  cell: number;
+  columns: number;
+  rows: number;
+  /** Altura (px) da referência de corpo depois da normalização. */
+  bodyHeight: number;
+  /** Linha do chão dentro da célula (px do topo). */
+  groundLine: number;
+}
+
+/**
+ * Normaliza um sprite sheet: uma única escala para todas as células (e
+ * derivada de um percentil baixo das alturas, para casar entre ações),
+ * cada quadro centrado no eixo X e com os pés na mesma linha de chão.
+ */
+export function frameSpriteSheetPng(
+  bytes: Uint8Array,
+  opts: SheetFramingOptions,
+): SheetFramingResult {
+  const img = toRgba8(decode(bytes));
+  keyOutWhite(img, opts.tolerance);
+
+  const cols = Math.max(1, Math.round(opts.columns));
+  const rows = Math.max(1, Math.round(opts.rows));
+  const cw = Math.floor(img.width / cols);
+  const ch = Math.floor(img.height / rows);
+  const cell = Math.max(32, Math.round(opts.canvas));
+  const fill = Math.min(0.92, Math.max(0.3, opts.fill));
+  const margin = Math.round(cell * 0.06);
+
+  // Bounds de cada célula, em coordenadas absolutas da imagem.
+  const cells: (Bounds | null)[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const region: Rgba = { width: cw, height: ch, data: new Uint8ClampedArray(cw * ch * 4) };
+      for (let y = 0; y < ch; y++) {
+        const src = ((r * ch + y) * img.width + c * cw) * 4;
+        region.data.set(img.data.subarray(src, src + cw * 4), y * cw * 4);
+      }
+      const b = alphaBounds(region);
+      cells.push(b ? { x: b.x + c * cw, y: b.y + r * ch, w: b.w, h: b.h } : null);
+    }
+  }
+
+  const heights = cells.filter((b): b is Bounds => !!b).map((b) => b.h);
+  const reference = heights.length ? percentile(heights, opts.referencePercentile) : ch;
+  let scale = (cell * fill) / Math.max(1, reference);
+  // Clamp global: nenhum quadro pode estourar a célula (mantém escala única).
+  const usable = cell - margin * 2;
+  for (const b of cells) {
+    if (!b) continue;
+    scale = Math.min(scale, usable / b.w, usable / b.h);
+  }
+
+  const outW = cell * cols;
+  const outH = cell * rows;
+  const canvas = new Uint8ClampedArray(outW * outH * 4);
+  const groundLine = cell - margin;
+
+  cells.forEach((b, i) => {
+    if (!b) return;
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    const dw = Math.max(1, Math.round(b.w * scale));
+    const dh = Math.max(1, Math.round(b.h * scale));
+    const scaled = resample(img, b, dw, dh);
+    const dx = c * cell + Math.round((cell - dw) / 2);
+    const dy = r * cell + (opts.pivot === "center" ? Math.round((cell - dh) / 2) : groundLine - dh);
+    for (let y = 0; y < dh; y++) {
+      const ty = dy + y;
+      if (ty < r * cell || ty >= (r + 1) * cell) continue;
+      for (let x = 0; x < dw; x++) {
+        const tx = dx + x;
+        if (tx < c * cell || tx >= (c + 1) * cell) continue;
+        const s = (y * dw + x) * 4;
+        const d = (ty * outW + tx) * 4;
+        canvas[d] = scaled.data[s]!;
+        canvas[d + 1] = scaled.data[s + 1]!;
+        canvas[d + 2] = scaled.data[s + 2]!;
+        canvas[d + 3] = scaled.data[s + 3]!;
+      }
+    }
+  });
+
+  return {
+    png: encode({ width: outW, height: outH, data: canvas, channels: 4, depth: 8 }),
+    cell,
+    columns: cols,
+    rows,
+    bodyHeight: Math.round(reference * scale),
+    groundLine,
+  };
+}
+
+/** Enquadra apenas os modos de sujeito isolado; texturas ficam intactas. */
+export function shouldFrameMode(mode: string): boolean {
+  return mode === "sprite" || mode === "ui" || mode === "model3d" || mode === "spritesheet";
+}
+
