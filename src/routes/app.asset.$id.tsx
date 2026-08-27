@@ -107,7 +107,7 @@ function AssetDetail() {
   const style: StyleProfile = { ...DEFAULT_STYLE_PROFILE, ...(project?.style_profile ?? {}) };
   const anim = animations[0];
 
-  function exportEngine(engine: Engine) {
+  function exportEngine(engine: Engine | null) {
     if (!image) return;
     const zip = buildEngineZip(
       {
@@ -118,6 +118,7 @@ function AssetDetail() {
         image,
         maps,
         frames,
+        frameRects: (anim?.frame_data?.rects ?? []) as never,
         animation:
           anim && anim.frame_data.columns && anim.frame_data.rows
             ? {
