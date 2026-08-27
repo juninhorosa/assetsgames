@@ -52,6 +52,59 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          credits_used: number
+          id: string
+          key_hash: string
+          last_used_at: string | null
+          name: string
+          prefix: string
+          request_count: number
+          revoked_at: string | null
+          rotated_from: string | null
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_used?: number
+          id?: string
+          key_hash: string
+          last_used_at?: string | null
+          name?: string
+          prefix: string
+          request_count?: number
+          revoked_at?: string | null
+          rotated_from?: string | null
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_used?: number
+          id?: string
+          key_hash?: string
+          last_used_at?: string | null
+          name?: string
+          prefix?: string
+          request_count?: number
+          revoked_at?: string | null
+          rotated_from?: string | null
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_rotated_from_fkey"
+            columns: ["rotated_from"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_maps: {
         Row: {
           asset_id: string
@@ -140,6 +193,94 @@ export type Database = {
           },
         ]
       }
+      generation_runs: {
+        Row: {
+          action: string | null
+          api_key_id: string | null
+          asset_id: string | null
+          created_at: string
+          credits: number
+          duration_ms: number | null
+          error: string | null
+          id: string
+          kind: string
+          meta: Json
+          mode: string | null
+          model: string | null
+          project_id: string | null
+          prompt: string | null
+          size: string | null
+          source: string
+          status: string
+          user_id: string
+          view: string | null
+        }
+        Insert: {
+          action?: string | null
+          api_key_id?: string | null
+          asset_id?: string | null
+          created_at?: string
+          credits?: number
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          kind?: string
+          meta?: Json
+          mode?: string | null
+          model?: string | null
+          project_id?: string | null
+          prompt?: string | null
+          size?: string | null
+          source?: string
+          status?: string
+          user_id: string
+          view?: string | null
+        }
+        Update: {
+          action?: string | null
+          api_key_id?: string | null
+          asset_id?: string | null
+          created_at?: string
+          credits?: number
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          kind?: string
+          meta?: Json
+          mode?: string | null
+          model?: string | null
+          project_id?: string | null
+          prompt?: string | null
+          size?: string | null
+          source?: string
+          status?: string
+          user_id?: string
+          view?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_runs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_runs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_runs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -161,7 +302,9 @@ export type Database = {
       projects: {
         Row: {
           created_at: string
+          credit_budget: number
           description: string | null
+          export_preset: Json
           id: string
           name: string
           style_profile: Json
@@ -170,7 +313,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credit_budget?: number
           description?: string | null
+          export_preset?: Json
           id?: string
           name: string
           style_profile?: Json
@@ -179,7 +324,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credit_budget?: number
           description?: string | null
+          export_preset?: Json
           id?: string
           name?: string
           style_profile?: Json
