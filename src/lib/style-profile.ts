@@ -7,7 +7,9 @@ export type ViewKey =
   | "side-right"
   | "side-left"
   | "front"
+  | "back"
   | "three-quarter"
+  | "three-quarter-back"
   | "top-down"
   | "isometric";
 
@@ -15,7 +17,9 @@ export const VIEW_LABELS: Record<ViewKey, string> = {
   "side-right": "Lateral — virado para a direita",
   "side-left": "Lateral — virado para a esquerda",
   front: "Frontal (de frente para a câmera)",
-  "three-quarter": "3/4 (semi-perfil)",
+  back: "De costas (afastando-se da câmera)",
+  "three-quarter": "3/4 frontal (semi-perfil)",
+  "three-quarter-back": "3/4 de costas",
   "top-down": "Top-down (visto de cima)",
   isometric: "Isométrico (45°)",
 };
@@ -27,17 +31,56 @@ const VIEW_PROMPTS: Record<ViewKey, string> = {
     "strict side view (pure profile) with the subject facing to the LEFT of the frame, camera at subject height, perfectly level horizon, no rotation and no perspective drift",
   front:
     "strict front view with the subject facing the camera straight on, symmetrical, camera at subject height, no rotation and no perspective drift",
+  back:
+    "strict back view with the subject facing directly away from the camera, showing the back of the head, back and heels, symmetrical, camera at subject height, no rotation and no perspective drift",
   "three-quarter":
-    "consistent three-quarter view, subject rotated 45 degrees to its right so both the front and one side are visible, camera at subject height, identical rotation in every asset",
+    "consistent three-quarter FRONT view, subject rotated 45 degrees to its right so both the front and one side are visible, camera at subject height, identical rotation in every asset",
+  "three-quarter-back":
+    "consistent three-quarter BACK view, subject rotated 135 degrees so the back and one side are visible and the face is hidden, camera at subject height, identical rotation in every asset",
   "top-down":
     "strict top-down view straight from above, orthographic, subject facing up the frame, no perspective",
   isometric:
     "consistent isometric view at 45 degrees horizontally and about 30 degrees above, orthographic projection, identical camera angle in every asset",
 };
 
-export function viewLine(profile: StyleProfile): string {
-  return VIEW_PROMPTS[profile.view ?? "side-right"];
+export function viewLine(profile: StyleProfile, override?: ViewKey): string {
+  return VIEW_PROMPTS[override ?? profile.view ?? "side-right"];
 }
+
+/** Conjuntos de direções para gerar o personagem/ação visto de todos os lados. */
+export interface DirectionSet {
+  id: string;
+  label: string;
+  views: ViewKey[];
+}
+
+export const DIRECTION_SETS: DirectionSet[] = [
+  { id: "single", label: "Só o sentido do projeto", views: [] },
+  {
+    id: "four",
+    label: "4 direções (frente, costas, esquerda, direita)",
+    views: ["front", "back", "side-left", "side-right"],
+  },
+  {
+    id: "eight",
+    label: "8 direções (4 + diagonais + topo/isométrico)",
+    views: [
+      "front",
+      "three-quarter",
+      "side-right",
+      "three-quarter-back",
+      "back",
+      "side-left",
+      "top-down",
+      "isometric",
+    ],
+  },
+];
+
+export function findDirectionSet(id: string): DirectionSet {
+  return DIRECTION_SETS.find((d) => d.id === id) ?? DIRECTION_SETS[0]!;
+}
+
 
 export interface StyleProfile {
   style: StyleKey;
@@ -92,6 +135,9 @@ export interface GenerationParams {
   uiKind?: string | undefined;
   /** Variação de estilo 3D — só usada no modo `model3d`. */
   model3dStyle?: Model3dStyleKey | undefined;
+  /** Sobrescreve o sentido travado do projeto (usado na geração multidirecional). */
+  view?: ViewKey | undefined;
+
 }
 
 /** Variações controladas de estilo para a geração 3D. */
@@ -181,7 +227,7 @@ export function buildPrompt(
 ): string {
   const styleLine = `${STYLE_PROMPTS[profile.style]}, color palette: ${profile.palette}, ${detailWord(profile.detail)}`;
   const extra = profile.extra?.trim() ? ` Art direction notes: ${profile.extra.trim()}.` : "";
-  const view = `Camera and orientation lock: ${viewLine(profile)}.`;
+  const view = `Camera and orientation lock: ${viewLine(profile, params.view)}.`;
 
   switch (params.mode) {
     case "spritesheet": {
