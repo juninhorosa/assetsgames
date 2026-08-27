@@ -115,6 +115,15 @@ import {
   updateStyleProfile,
   type ProjectRow,
 } from "@/lib/assets-repo";
+import {
+  advanceQueue,
+  clearQueue,
+  loadQueue,
+  saveQueue,
+  type QueueJob,
+  type QueueState,
+} from "@/lib/batch-queue";
+
 
 export const Route = createFileRoute("/app/")({
   head: () => ({
