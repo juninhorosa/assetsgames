@@ -304,3 +304,131 @@ export function dataUrlToBytes(dataUrl: string): Uint8Array {
 export function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([dataUrlToBytes(dataUrl) as BlobPart], { type: "image/png" });
 }
+
+// ── Alinhamento de quadros (trim + pivô) ─────────────────────────────
+
+export type PivotMode = "bottom-center" | "center";
+
+export interface AlignOptions {
+  pivot: PivotMode;
+  padding: number; // px de folga ao redor do maior recorte
+  alphaThreshold: number; // 0..255
+}
+
+export const DEFAULT_ALIGN_OPTIONS: AlignOptions = {
+  pivot: "bottom-center",
+  padding: 2,
+  alphaThreshold: 8,
+};
+
+interface Bounds {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+function alphaBounds(data: ImageData, threshold: number): Bounds | null {
+  const { width: w, height: h, data: px } = data;
+  let minX = w;
+  let minY = h;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (px[(y * w + x) * 4 + 3]! <= threshold) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < 0) return null;
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+export interface AlignResult extends SheetSlice {
+  pivot: { x: number; y: number };
+  trimmed: number;
+}
+
+/**
+ * Recorta a área opaca de cada quadro e recompõe todos numa célula comum,
+ * ancorados no mesmo pivô — elimina a "tremida" da animação.
+ */
+export async function alignFrames(
+  frames: string[],
+  opts: AlignOptions = DEFAULT_ALIGN_OPTIONS,
+): Promise<AlignResult> {
+  const images = await Promise.all(frames.map((f) => loadImage(f)));
+  const bounds = images.map((img) => alphaBounds(imageDataOf(img), opts.alphaThreshold));
+
+  const valid = bounds.filter((b): b is Bounds => b !== null);
+  if (valid.length === 0) {
+    throw new Error("Os quadros estão vazios — remova o fundo antes de alinhar");
+  }
+
+  const maxW = Math.max(...valid.map((b) => b.w));
+  const maxH = Math.max(...valid.map((b) => b.h));
+  const cellWidth = maxW + opts.padding * 2;
+  const cellHeight = maxH + opts.padding * 2;
+
+  const out: string[] = [];
+  const rects: FrameRect[] = [];
+  for (let i = 0; i < images.length; i++) {
+    const { canvas, ctx } = ctxOf(cellWidth, cellHeight);
+    const b = bounds[i];
+    if (b) {
+      const dx = Math.round((cellWidth - b.w) / 2);
+      const dy =
+        opts.pivot === "bottom-center"
+          ? cellHeight - opts.padding - b.h
+          : Math.round((cellHeight - b.h) / 2);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(images[i]!, b.x, b.y, b.w, b.h, dx, dy, b.w, b.h);
+    }
+    out.push(canvas.toDataURL("image/png"));
+    rects.push({ index: i, x: 0, y: 0, w: cellWidth, h: cellHeight });
+  }
+
+  return {
+    frames: out,
+    rects,
+    cellWidth,
+    cellHeight,
+    trimmed: valid.length,
+    pivot: {
+      x: cellWidth / 2,
+      y: opts.pivot === "bottom-center" ? cellHeight - opts.padding : cellHeight / 2,
+    },
+  };
+}
+
+/** Recompõe uma sheet a partir de quadros individuais (após editar/reordenar). */
+export function composeSheet(
+  frameImages: HTMLImageElement[],
+  columns: number,
+): { dataUrl: string; rects: FrameRect[]; columns: number; rows: number; cellWidth: number; cellHeight: number } {
+  const cols = Math.max(1, Math.min(columns, frameImages.length));
+  const rows = Math.ceil(frameImages.length / cols);
+  const cellWidth = Math.max(...frameImages.map((i) => i.naturalWidth));
+  const cellHeight = Math.max(...frameImages.map((i) => i.naturalHeight));
+  const { canvas, ctx } = ctxOf(cols * cellWidth, rows * cellHeight);
+  ctx.imageSmoothingEnabled = false;
+  const rects: FrameRect[] = [];
+  frameImages.forEach((img, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const x = col * cellWidth;
+    const y = row * cellHeight;
+    ctx.drawImage(img, x, y, cellWidth, cellHeight);
+    rects.push({ index, x, y, w: cellWidth, h: cellHeight });
+  });
+  return { dataUrl: canvas.toDataURL("image/png"), rects, columns: cols, rows, cellWidth, cellHeight };
+}
+
+/** Conveniência: recompõe a sheet a partir de data URLs. */
+export async function composeSheetFromDataUrls(frames: string[], columns: number) {
+  const imgs = await Promise.all(frames.map((f) => loadImage(f)));
+  return composeSheet(imgs, columns);
+}
