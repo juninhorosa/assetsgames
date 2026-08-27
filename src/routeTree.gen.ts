@@ -22,6 +22,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppBatchRouteImport } from './routes/app.batch'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
 import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
+import { Route as DocsConnectRouteImport } from './routes/docs.connect'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
@@ -95,6 +96,11 @@ const DocsArchitectureRoute = DocsArchitectureRouteImport.update({
   path: '/docs/architecture',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsConnectRoute = DocsConnectRouteImport.update({
+  id: '/docs/connect',
+  path: '/docs/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
   path: '/.lovable/oauth/consent',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/connect': typeof DocsConnectRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/connect': typeof DocsConnectRoute
   '/app': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
+  '/docs/connect': typeof DocsConnectRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
+    | '/docs/connect'
     | '/app/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
+    | '/docs/connect'
     | '/app'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
+    | '/docs/connect'
     | '/app/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -257,6 +269,7 @@ export interface RootRouteChildren {
   ApiGenerateAssetRoute: typeof ApiGenerateAssetRoute
   ApiRosterRoute: typeof ApiRosterRoute
   DocsArchitectureRoute: typeof DocsArchitectureRoute
+  DocsConnectRoute: typeof DocsConnectRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicForge3dCapabilitiesRoute: typeof ApiPublicForge3dCapabilitiesRoute
@@ -356,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsArchitectureRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/connect': {
+      id: '/docs/connect'
+      path: '/docs/connect'
+      fullPath: '/docs/connect'
+      preLoaderRoute: typeof DocsConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.lovable/oauth/consent': {
       id: '/.lovable/oauth/consent'
       path: '/.lovable/oauth/consent'
@@ -422,6 +442,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGenerateAssetRoute: ApiGenerateAssetRoute,
   ApiRosterRoute: ApiRosterRoute,
   DocsArchitectureRoute: DocsArchitectureRoute,
+  DocsConnectRoute: DocsConnectRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicForge3dCapabilitiesRoute: ApiPublicForge3dCapabilitiesRoute,

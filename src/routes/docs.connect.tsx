@@ -23,7 +23,7 @@ export const Route = createFileRoute("/docs/connect")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: ConnectDocs;
+  component: ConnectDocs,
 });
 
 function CodeBlock({ code }: { code: string }) {
