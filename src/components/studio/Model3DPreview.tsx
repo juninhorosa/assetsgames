@@ -88,7 +88,9 @@ export function Model3DPreview({ mesh, albedo }: { mesh: MeshData; albedo: strin
         let frame = 0;
         const animate = () => {
           frame = requestAnimationFrame(animate);
-          if (autoRotate) yaw += 0.004;
+          // Balanço suave em arco: mantém a leitura frontal do asset em vez de
+          // girar até o perfil (onde um relevo 2.5D fica quase invisível).
+          if (autoRotate) yaw = 0.55 * Math.sin(performance.now() / 2600);
           place();
           renderer.render(scene, camera);
         };
