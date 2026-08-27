@@ -1,0 +1,354 @@
+{
+  "version": 1,
+  "sdk_version": "0.28.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://acgwppuezkvadstchkhc.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "asset-forge",
+      "version": "0.1.0",
+      "title": "Asset Forge"
+    },
+    "tools": [
+      {
+        "name": "list_capabilities",
+        "title": "List capabilities",
+        "description": "List every asset mode, art style, camera view, direction set, animation action and 3D style variation this generator supports. Call this first to learn the valid values.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_projects",
+        "title": "List projects",
+        "description": "List the signed-in user's asset projects with their locked style profile (style, camera view, palette, detail).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_project",
+        "title": "Create project",
+        "description": "Create a project with a locked style profile. Every asset generated into it reuses that style, palette and camera view so the whole game stays visually consistent.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Project name."
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional short description."
+            },
+            "style": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "pixel-art",
+                    "low-poly",
+                    "stylized",
+                    "pbr-realistic"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Art style, default stylized."
+            },
+            "view": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "side-right",
+                    "side-left",
+                    "front",
+                    "back",
+                    "three-quarter",
+                    "three-quarter-back",
+                    "top-down",
+                    "isometric"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Locked camera view, default side-right."
+            },
+            "palette": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Color palette description."
+            },
+            "detail": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Detail level 1-10."
+            },
+            "extra": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Extra art-direction notes."
+            }
+          },
+          "required": [
+            "name",
+            "description",
+            "style",
+            "view",
+            "palette",
+            "detail",
+            "extra"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "generate_asset",
+        "title": "Generate game asset",
+        "description": "Generate a game asset (sprite, animated sprite sheet, PBR texture, UI icon or 3D-ready relief) and save it to a project. Use direction_set to get the same subject and action from 4 or 8 camera directions. Returns the PNGs plus grid, fps and pivot metadata.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Project to save into. Null uses the newest project of the user."
+            },
+            "prompt": {
+              "type": "string",
+              "minLength": 3,
+              "description": "What to create, e.g. 'stone golem warrior'."
+            },
+            "mode": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "sprite",
+                    "spritesheet",
+                    "texture",
+                    "ui",
+                    "model3d"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Asset mode, default sprite. Use spritesheet for animation."
+            },
+            "action": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Animation action id from list_capabilities (spritesheet only), e.g. walk."
+            },
+            "direction_set": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "single",
+                    "four",
+                    "eight"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "single = project view only; four/eight = generate one asset per direction."
+            },
+            "view": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "side-right",
+                    "side-left",
+                    "front",
+                    "back",
+                    "three-quarter",
+                    "three-quarter-back",
+                    "top-down",
+                    "isometric"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Override the camera view for a single-direction generation."
+            },
+            "model3d_style": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "low-poly",
+                    "hand-painted",
+                    "pbr-realistic",
+                    "toon-cel",
+                    "clay-sculpt"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "3D style variation (model3d mode)."
+            },
+            "ui_kind": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "UI kind, e.g. icon, button, frame (ui mode)."
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "1024x1024",
+                    "1024x1536",
+                    "1536x1024"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Image size, default 1024x1024."
+            },
+            "return_images": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Include the PNG bytes in the reply. Default true; false returns only URLs."
+            }
+          },
+          "required": [
+            "project_id",
+            "prompt",
+            "mode",
+            "action",
+            "direction_set",
+            "view",
+            "model3d_style",
+            "ui_kind",
+            "size",
+            "return_images"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_assets",
+        "title": "List assets",
+        "description": "List the assets of one project, with type, prompt, params (action, camera view, grid) and a temporary download URL for the PNG.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "project_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Project id from list_projects."
+            },
+            "limit": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Max rows, default 30."
+            }
+          },
+          "required": [
+            "project_id",
+            "limit"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
