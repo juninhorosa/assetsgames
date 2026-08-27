@@ -23,6 +23,7 @@ import { Route as ApiRosterRouteImport } from './routes/api/roster'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppBatchRouteImport } from './routes/app.batch'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
+import { Route as AppUsageRouteImport } from './routes/app.usage'
 import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
 import { Route as DocsConnectRouteImport } from './routes/docs.connect'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -104,6 +105,11 @@ const AppLibraryRoute = AppLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => AppRoute,
 } as any)
+const AppUsageRoute = AppUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => AppRoute,
+} as any)
 const DocsArchitectureRoute = DocsArchitectureRouteImport.update({
   id: '/docs/architecture',
   path: '/docs/architecture',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
   '/app/': typeof AppIndexRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
   '/app': typeof AppIndexRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
   '/app/': typeof AppIndexRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
+    | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
     | '/app/'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
+    | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
     | '/app'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
+    | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
     | '/app/'
@@ -414,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/usage': {
+      id: '/app/usage'
+      path: '/usage'
+      fullPath: '/app/usage'
+      preLoaderRoute: typeof AppUsageRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/docs/architecture': {
       id: '/docs/architecture'
       path: '/docs/architecture'
@@ -476,6 +495,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppBatchRoute: typeof AppBatchRoute
   AppLibraryRoute: typeof AppLibraryRoute
+  AppUsageRoute: typeof AppUsageRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAssetIdRoute: typeof AppAssetIdRoute
   AppSettingsKeysRoute: typeof AppSettingsKeysRoute
@@ -484,6 +504,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppBatchRoute: AppBatchRoute,
   AppLibraryRoute: AppLibraryRoute,
+  AppUsageRoute: AppUsageRoute,
   AppIndexRoute: AppIndexRoute,
   AppAssetIdRoute: AppAssetIdRoute,
   AppSettingsKeysRoute: AppSettingsKeysRoute,
