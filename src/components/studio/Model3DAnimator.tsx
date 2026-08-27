@@ -37,7 +37,7 @@ export function Model3DAnimator({
     (async () => {
       try {
         const THREE = await import("three");
-        const built = [];
+        const built: Awaited<ReturnType<typeof createReliefMesh>>[] = [];
         for (let i = 0; i < frames.length; i++) {
           const frame = frames[i]!;
           built.push(await createReliefMesh(frame.mesh, frame.albedo));
