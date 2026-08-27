@@ -263,8 +263,12 @@ ${steps[engine]}
 `;
 }
 
-/** Builds an engine-ready ZIP (textures + metadata + import script). */
-export function buildEngineZip(asset: AssetExport, engine: Engine): Blob {
+/**
+ * Builds an engine-ready ZIP (textures, meshes, metadata, import script) that
+ * always carries the AI-readable manifest + agent guide.
+ * `engine === null` produces the engine-agnostic "pacote para IA" (all scripts).
+ */
+export function buildEngineZip(asset: AssetExport, engine: Engine | null): Blob {
   const id = slug(asset.name);
   const files: Record<string, Uint8Array> = {};
 
