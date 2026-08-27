@@ -828,7 +828,7 @@ function Generator() {
         {frames.length > 0 && (
           <section className="space-y-3">
             <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-              Player de animação — {animation}
+              Player de animação — {findAction(animation)?.label ?? animation}
             </h2>
             <SpritePlayer
               frames={frames}
