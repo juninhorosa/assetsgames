@@ -218,9 +218,13 @@ export default defineTool({
               read_order: "left-to-right, top-to-bottom",
             }
           : {}),
+        ...(framed
+          ? { framed: true, canvas: { width: frameSize, height: frameSize }, pivot: "bottom-center" }
+          : {}),
         download_url: signed.data?.signedUrl ?? null,
         prompt: finalPrompt,
       });
+
       if (input.return_images !== false) {
         images.push({ type: "image", data: b64, mimeType: "image/png" });
       }
