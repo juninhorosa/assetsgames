@@ -53,8 +53,11 @@ import {
   MODE_LABELS,
   STYLE_LABELS,
   VIEW_LABELS,
+  DIRECTION_SETS,
+  findDirectionSet,
   type ViewKey,
   buildPrompt,
+
   DEFAULT_MODEL3D_STYLE,
   MODEL3D_STYLES,
   findModel3dStyle,
