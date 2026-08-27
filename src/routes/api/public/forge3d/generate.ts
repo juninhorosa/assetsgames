@@ -65,19 +65,23 @@ async function generateImage(prompt: string, size: string, key: string): Promise
 
 /**
  * Endpoint público para agentes/IAs gerarem assets direto.
- * Autenticação obrigatória por `x-forge3d-key` (segredo FORGE3D_API_KEY).
+ * Autenticação por `x-forge3d-key` com as chaves criadas em /app/settings/keys
+ * (comparação por hash SHA-256; chaves revogadas são rejeitadas).
  */
 export const Route = createFileRoute("/api/public/forge3d/generate")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env["FORGE3D_API_KEY"];
-        if (!expected) return new Response("API não configurada", { status: 500 });
         const provided =
           request.headers.get("x-forge3d-key") ??
           request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
           "";
-        if (provided !== expected) return new Response("Chave inválida", { status: 401 });
+        const { verifyApiKey, trackApiKeyUsage } = await import("@/lib/api-keys.server");
+        const legacy = process.env["FORGE3D_API_KEY"];
+        const verified = await verifyApiKey(provided);
+        const legacyOk = !!legacy && provided === legacy;
+        if (!verified && !legacyOk) return new Response("Chave inválida", { status: 401 });
+
 
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("LOVABLE_API_KEY ausente", { status: 500 });
