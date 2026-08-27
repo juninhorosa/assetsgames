@@ -208,3 +208,83 @@ export async function exportGlb(mesh: MeshData, albedo: string, name: string): P
 
   return new Blob([glb], { type: "model/gltf-binary" });
 }
+
+export interface MotionFrame {
+  mesh: MeshData;
+  albedo: string;
+}
+
+async function parseGlb(scene: unknown, animations: unknown[] = []): Promise<ArrayBuffer> {
+  const { GLTFExporter } = await import("three/examples/jsm/exporters/GLTFExporter.js");
+  const exporter = new GLTFExporter();
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    exporter.parse(
+      scene as never,
+      (result) => {
+        if (result instanceof ArrayBuffer) resolve(result);
+        else reject(new Error("Exportador retornou glTF em JSON, esperado binário."));
+      },
+      (error) => reject(error instanceof Error ? error : new Error("Falha ao exportar GLB")),
+      { binary: true, animations: animations as never },
+    );
+  });
+}
+
+/**
+ * Exports a stop-motion 3D animation: one relief mesh per animation frame,
+ * with a single glTF clip that toggles visibility (scale 0/1, discrete
+ * interpolation) — importable in Unity, Unreal and Godot as one animated model.
+ */
+export async function exportAnimatedGlb(
+  frames: MotionFrame[],
+  name: string,
+  fps: number,
+): Promise<Blob> {
+  if (!frames.length) throw new Error("Nenhum quadro 3D para exportar.");
+  const THREE = await import("three");
+  const scene = new THREE.Scene();
+  scene.name = name;
+
+  const times = frames.map((_, i) => i / fps);
+  const tracks: unknown[] = [];
+
+  for (let i = 0; i < frames.length; i++) {
+    const frame = frames[i]!;
+    const { mesh: object } = await createReliefMesh(frame.mesh, frame.albedo);
+    object.name = `${name}_${String(i).padStart(2, "0")}`;
+    object.scale.setScalar(i === 0 ? 1 : 0);
+    scene.add(object);
+
+    const values: number[] = [];
+    for (let j = 0; j < frames.length; j++) {
+      const on = j === i ? 1 : 0;
+      values.push(on, on, on);
+    }
+    const track = new THREE.VectorKeyframeTrack(
+      `${object.name}.scale`,
+      times,
+      values,
+      THREE.InterpolateDiscrete,
+    );
+    tracks.push(track);
+  }
+
+  const clip = new THREE.AnimationClip(name, frames.length / fps, tracks as never);
+  const glb = await parseGlb(scene, [clip]);
+  return new Blob([glb], { type: "model/gltf-binary" });
+}
+
+/** Raw GLB bytes for a single relief (used when packing an export ZIP). */
+export async function glbBytes(mesh: MeshData, albedo: string, name: string): Promise<Uint8Array> {
+  const blob = await exportGlb(mesh, albedo, name);
+  return new Uint8Array(await blob.arrayBuffer());
+}
+
+export async function animatedGlbBytes(
+  frames: MotionFrame[],
+  name: string,
+  fps: number,
+): Promise<Uint8Array> {
+  const blob = await exportAnimatedGlb(frames, name, fps);
+  return new Uint8Array(await blob.arrayBuffer());
+}
