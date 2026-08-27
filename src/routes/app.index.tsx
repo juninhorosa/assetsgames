@@ -713,6 +713,7 @@ function Generator() {
 
   return (
     <div className="grid flex-1 gap-px bg-border lg:grid-cols-[320px_1fr_340px]">
+      <h1 className="sr-only">Estúdio de criação de assets</h1>
       {/* ── Projeto & estilo ─────────────────────────────── */}
       <aside className="space-y-6 bg-background p-4">
         <section className="space-y-3">
