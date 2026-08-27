@@ -1,9 +1,12 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Boxes, Gauge, Images, KeyRound, LogOut, Users, Wand2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Boxes, Gauge, Images, KeyRound, LogOut, ShieldCheck, Users, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { fetchIsAdmin } from "@/lib/admin-repo";
 import { useAuth } from "@/hooks/use-auth.tsx";
+
 
 export const Route = createFileRoute("/app")({
   head: () => ({
