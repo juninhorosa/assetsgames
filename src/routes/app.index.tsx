@@ -69,9 +69,13 @@ import {
 } from "@/lib/image-pipeline";
 import {
   DEFAULT_RELIEF_OPTIONS,
+  animatedGlbBytes,
   buildRelief,
+  exportAnimatedGlb,
   exportGlb,
+  glbBytes,
   type MeshData,
+  type MotionFrame,
   type ReliefOptions,
 } from "@/lib/mesh-3d";
 import { streamEdit, streamGenerate } from "@/lib/stream-image";
