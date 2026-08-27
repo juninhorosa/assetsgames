@@ -335,9 +335,19 @@ ${steps[engine]}
  * always carries the AI-readable manifest + agent guide.
  * `engine === null` produces the engine-agnostic "pacote para IA" (all scripts).
  */
-export function buildEngineZip(asset: AssetExport, engine: Engine | null): Blob {
+export function buildEngineZip(
+  asset: AssetExport,
+  engine: Engine | null,
+  options: { pivot?: PivotPreset } = {},
+): Blob {
   const id = slug(asset.name);
   const files: Record<string, Uint8Array> = {};
+  const preset = resolvePreset(engine ?? "unity", {
+    pixelArt: asset.style.style === "pixel-art",
+    tiling: asset.mode === "texture",
+    pivot: options.pivot,
+  });
+
 
   const maps = asset.maps ?? {};
   for (const [map, dataUrl] of Object.entries(maps)) {
