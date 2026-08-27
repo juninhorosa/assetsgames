@@ -200,6 +200,7 @@ function Generator() {
 
   const [relief, setRelief] = useState<MeshData | null>(null);
   const [reliefOpts, setReliefOpts] = useState<ReliefOptions>(DEFAULT_RELIEF_OPTIONS);
+  const [motion3d, setMotion3d] = useState<MotionFrame[] | null>(null);
 
   const params = { mode, animation, columns, rows, uiKind };
   const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind]);
