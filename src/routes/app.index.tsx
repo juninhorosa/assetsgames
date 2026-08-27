@@ -646,6 +646,45 @@ function Generator() {
     }
   }
 
+  /** Normaliza o enquadramento: mesma escala, mesma margem e mesmo tamanho de saída. */
+  async function normalizeFrame() {
+    if (!image) return;
+    setBusy("Enquadrando asset");
+    try {
+      const opts = { ...DEFAULT_FRAMING_OPTIONS, pivot: pivotMode };
+      if (frames.length > 0) {
+        const raw = await Promise.all(
+          frames.map(async (f) => {
+            const img = await loadImage(f);
+            return hasAlpha(img) ? f : removeBackground(img);
+          }),
+        );
+        const framed = await normalizeFramingBatch(raw, opts);
+        setFrames(framed);
+        const sheet = await composeSheetFromDataUrls(framed, columns);
+        setImage(sheet.dataUrl);
+        setIsFinal(true);
+        setRects(sheet.rects);
+        setColumns(sheet.columns);
+        setRows(sheet.rows);
+        setCell({ w: sheet.cellWidth, h: sheet.cellHeight });
+        toast.success(`${framed.length} quadros enquadrados em ${opts.canvas}px`);
+      } else {
+        const img = await loadImage(image);
+        const source = hasAlpha(img) ? img : await loadImage(removeBackground(img));
+        setImage(normalizeFraming(source, opts));
+        setIsFinal(true);
+        toast.success(`Enquadrado em ${opts.canvas}×${opts.canvas}px`);
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+
+
   async function derive() {
     if (!image) return;
     setBusy("Derivando mapas PBR");
