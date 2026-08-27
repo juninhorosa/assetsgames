@@ -12,10 +12,11 @@ import {
   DEFAULT_SERVER_FRAMING,
   DEFAULT_SHEET_FRAMING,
   bytesToBase64,
-  frameAssetPng,
+  frameAssetPngDetailed,
   frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
+
 
 import { DIRECTION_SETS, VIEW_LABELS, type ViewKey } from "@/lib/style-profile";
 
