@@ -1424,6 +1424,36 @@ function Generator() {
               Fatiar {columns}×{rows} quadros
             </Button>
           )}
+          {frames.length > 0 && (
+            <div className="space-y-2 rounded-md border border-border bg-card/40 p-3">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+                Pivô e trim
+              </p>
+              <Select value={pivotMode} onValueChange={(v) => setPivotMode(v as PivotMode)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bottom-center">Base central (pés no chão)</SelectItem>
+                  <SelectItem value="center">Centro da célula</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={alignSequence}
+                disabled={busy !== null}
+              >
+                <Anchor className="size-4" />
+                Alinhar quadros no pivô
+              </Button>
+              <p className="text-[11px] text-muted-foreground">
+                Recorta o alpha de cada quadro e alinha tudo numa célula comum, eliminando a
+                tremida da animação nas engines.
+              </p>
+            </div>
+          )}
+
           {(mode === "model3d" || mode === "spritesheet") && (
             <>
               <div className="space-y-2">
