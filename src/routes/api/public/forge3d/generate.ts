@@ -16,7 +16,7 @@ import {
   DEFAULT_SHEET_FRAMING,
   base64ToBytes,
   bytesToBase64,
-  frameAssetPng,
+  frameAssetPngDetailed,
   frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
