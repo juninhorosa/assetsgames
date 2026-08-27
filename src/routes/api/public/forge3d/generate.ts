@@ -59,6 +59,9 @@ const BodySchema = z.object({
   frameSize: z.number().int().min(64).max(2048).default(512),
   /** Lado da célula (px) do sprite sheet normalizado. */
   cellSize: z.number().int().min(32).max(512).default(128),
+  /** Altura alvo do corpo na tela (px). Auto-ajusta frameSize/cellSize. */
+  targetBodyHeight: z.number().int().min(16).max(1024).nullable().default(null),
+
 
 });
 
