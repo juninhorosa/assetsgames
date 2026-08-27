@@ -131,7 +131,7 @@ function AssetDetail() {
       },
       engine,
     );
-    downloadBlob(zip, `${slugify(asset.name)}-${engine}.zip`);
+    downloadBlob(zip, `${slugify(asset.name)}-${engine ?? "ai-pack"}.zip`);
   }
 
   return (
