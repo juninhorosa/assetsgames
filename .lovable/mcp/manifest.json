@@ -305,6 +305,30 @@
               ],
               "description": "Image size, default 1024x1024."
             },
+            "frame": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Normalize framing: cut out the white background and fit the subject to a fixed square canvas with the same scale and pivot, so every asset has the same size. Default true for sprite/ui/model3d."
+            },
+            "frame_size": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 64,
+                  "maximum": 2048
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Side of the normalized square canvas in px. Default 512."
+            },
             "return_images": {
               "anyOf": [
                 {
@@ -327,6 +351,8 @@
             "model3d_style",
             "ui_kind",
             "size",
+            "frame",
+            "frame_size",
             "return_images"
           ]
         },

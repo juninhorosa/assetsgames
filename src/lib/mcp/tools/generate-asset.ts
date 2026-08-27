@@ -58,10 +58,24 @@ export default defineTool({
       .enum(["1024x1024", "1024x1536", "1536x1024"])
       .nullable()
       .describe("Image size, default 1024x1024."),
+    frame: z
+      .boolean()
+      .nullable()
+      .describe(
+        "Normalize framing: cut out the white background and fit the subject to a fixed square canvas with the same scale and pivot, so every asset has the same size. Default true for sprite/ui/model3d.",
+      ),
+    frame_size: z
+      .number()
+      .int()
+      .min(64)
+      .max(2048)
+      .nullable()
+      .describe("Side of the normalized square canvas in px. Default 512."),
     return_images: z
       .boolean()
       .nullable()
       .describe("Include the PNG bytes in the reply. Default true; false returns only URLs."),
+
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {
