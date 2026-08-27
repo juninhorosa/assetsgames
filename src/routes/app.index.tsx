@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -127,6 +127,26 @@ function Generator() {
   useEffect(() => {
     if (!projectId && projects[0]) setProjectId(projects[0].id);
   }, [projects, projectId]);
+
+  // Garante que exista sempre um projeto padrão (salvar/biblioteca dependem dele)
+  const bootstrapped = useRef(false);
+  useEffect(() => {
+    if (loadingProjects || bootstrapped.current) return;
+    if (projects.length > 0) {
+      bootstrapped.current = true;
+      return;
+    }
+    bootstrapped.current = true;
+    createProject({ name: "Projeto 1", style_profile: DEFAULT_STYLE_PROFILE })
+      .then(async (created) => {
+        await qc.invalidateQueries({ queryKey: ["projects"] });
+        setProjectId(created.id);
+      })
+      .catch(() => {
+        bootstrapped.current = false;
+      });
+  }, [loadingProjects, projects.length, qc]);
+
 
   const [profile, setProfile] = useState<StyleProfile>(DEFAULT_STYLE_PROFILE);
   useEffect(() => {
