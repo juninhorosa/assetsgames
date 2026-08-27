@@ -432,3 +432,84 @@ export async function composeSheetFromDataUrls(frames: string[], columns: number
   const imgs = await Promise.all(frames.map((f) => loadImage(f)));
   return composeSheet(imgs, columns);
 }
+
+// ── Enquadramento normalizado (mesma escala / mesmo tamanho) ──────────
+
+export interface FramingOptions {
+  /** Lado da tela quadrada de saída (px). */
+  canvas: number;
+  /** Fração da tela que a silhueta deve ocupar (0..1). */
+  fill: number;
+  /** Âncora vertical do sujeito. */
+  pivot: PivotMode;
+  alphaThreshold: number;
+}
+
+export const DEFAULT_FRAMING_OPTIONS: FramingOptions = {
+  canvas: 512,
+  fill: 0.86,
+  pivot: "bottom-center",
+  alphaThreshold: 8,
+};
+
+/**
+ * Recorta o alpha, reescala o sujeito para ocupar sempre a mesma fração
+ * de uma tela quadrada fixa e ancora no mesmo pivô.
+ * Garante que todos os assets saiam com o mesmo tamanho e enquadramento.
+ */
+export function normalizeFraming(
+  img: HTMLImageElement,
+  opts: FramingOptions = DEFAULT_FRAMING_OPTIONS,
+): string {
+  const bounds = alphaBounds(imageDataOf(img), opts.alphaThreshold);
+  const size = opts.canvas;
+  const { canvas, ctx } = ctxOf(size, size);
+  if (!bounds) return canvas.toDataURL("image/png");
+
+  const target = size * opts.fill;
+  const scale = Math.min(target / bounds.w, target / bounds.h);
+  const w = Math.max(1, Math.round(bounds.w * scale));
+  const h = Math.max(1, Math.round(bounds.h * scale));
+  const margin = Math.round((size - target) / 2);
+  const dx = Math.round((size - w) / 2);
+  const dy = opts.pivot === "bottom-center" ? size - margin - h : Math.round((size - h) / 2);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, bounds.x, bounds.y, bounds.w, bounds.h, dx, dy, w, h);
+  return canvas.toDataURL("image/png");
+}
+
+/** Aplica o enquadramento normalizado a vários quadros/direções. */
+export async function normalizeFramingBatch(
+  frames: string[],
+  opts: FramingOptions = DEFAULT_FRAMING_OPTIONS,
+): Promise<string[]> {
+  const imgs = await Promise.all(frames.map((f) => loadImage(f)));
+  const bounds = imgs.map((i) => alphaBounds(imageDataOf(i), opts.alphaThreshold));
+  const valid = bounds.filter((b): b is Bounds => b !== null);
+  if (!valid.length) throw new Error("Os quadros estão vazios — remova o fundo antes de enquadrar");
+
+  // Escala única para toda a sequência: a maior silhueta define o zoom.
+  const size = opts.canvas;
+  const target = size * opts.fill;
+  const maxW = Math.max(...valid.map((b) => b.w));
+  const maxH = Math.max(...valid.map((b) => b.h));
+  const scale = Math.min(target / maxW, target / maxH);
+  const margin = Math.round((size - target) / 2);
+
+  return imgs.map((img, i) => {
+    const { canvas, ctx } = ctxOf(size, size);
+    const b = bounds[i];
+    if (b) {
+      const w = Math.max(1, Math.round(b.w * scale));
+      const h = Math.max(1, Math.round(b.h * scale));
+      const dx = Math.round((size - w) / 2);
+      const dy = opts.pivot === "bottom-center" ? size - margin - h : Math.round((size - h) / 2);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, b.x, b.y, b.w, b.h, dx, dy, w, h);
+    }
+    return canvas.toDataURL("image/png");
+  });
+}
