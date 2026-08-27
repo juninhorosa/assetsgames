@@ -59,6 +59,7 @@ export interface ManifestInput {
         frameCount: number;
         depth: number;
         segments: number;
+        style?: string | undefined;
       }
     | undefined;
 }
