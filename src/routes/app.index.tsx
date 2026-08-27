@@ -41,6 +41,7 @@ import { PbrControls } from "@/components/studio/PbrControls";
 import { SpritePlayer } from "@/components/studio/SpritePlayer";
 import { MaterialPreview3D } from "@/components/studio/MaterialPreview3D";
 import { Model3DPreview } from "@/components/studio/Model3DPreview";
+import { Model3DAnimator } from "@/components/studio/Model3DAnimator";
 
 import {
   ANIMATION_ACTIONS,
