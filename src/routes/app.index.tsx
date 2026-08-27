@@ -1016,7 +1016,7 @@ function Generator() {
               Fatiar {columns}×{rows} quadros
             </Button>
           )}
-          {mode === "model3d" && (
+          {(mode === "model3d" || mode === "spritesheet") && (
             <>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
