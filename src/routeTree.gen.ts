@@ -28,6 +28,7 @@ import { Route as DocsConnectRouteImport } from './routes/docs.connect'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
+import { Route as AppSettingsKeysRouteImport } from './routes/app.settings.keys'
 import { Route as ApiPublicForge3dCapabilitiesRouteImport } from './routes/api/public/forge3d/capabilities'
 import { Route as ApiPublicForge3dGenerateRouteImport } from './routes/api/public/forge3d/generate'
 
@@ -129,6 +130,11 @@ const AppAssetIdRoute = AppAssetIdRouteImport.update({
   path: '/asset/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsKeysRoute = AppSettingsKeysRouteImport.update({
+  id: '/settings/keys',
+  path: '/settings/keys',
+  getParentRoute: () => AppRoute,
+} as any)
 const ApiPublicForge3dCapabilitiesRoute =
   ApiPublicForge3dCapabilitiesRouteImport.update({
     id: '/api/public/forge3d/capabilities',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
 }
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
 }
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
 }
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
+    | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
   fileRoutesByTo: FileRoutesByTo
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
+    | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
   id:
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
+    | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
   fileRoutesById: FileRoutesById
@@ -437,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/settings/keys': {
+      id: '/app/settings/keys'
+      path: '/settings/keys'
+      fullPath: '/app/settings/keys'
+      preLoaderRoute: typeof AppSettingsKeysRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/public/forge3d/capabilities': {
       id: '/api/public/forge3d/capabilities'
       path: '/api/public/forge3d/capabilities'
@@ -459,6 +478,7 @@ interface AppRouteChildren {
   AppLibraryRoute: typeof AppLibraryRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAssetIdRoute: typeof AppAssetIdRoute
+  AppSettingsKeysRoute: typeof AppSettingsKeysRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -466,6 +486,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLibraryRoute: AppLibraryRoute,
   AppIndexRoute: AppIndexRoute,
   AppAssetIdRoute: AppAssetIdRoute,
+  AppSettingsKeysRoute: AppSettingsKeysRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
