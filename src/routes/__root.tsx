@@ -85,7 +85,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Gere sprites, sprite sheets, texturas PBR e UI para jogos e exporte para Unity, Unreal e Godot.",
       },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "Forge3D" },
       {
         name: "google-site-verification",
         content: "25-Layq9JGssRMNy-CXtQTlO7UMpNxLf8pGW_vVdvVw",
@@ -97,7 +97,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
