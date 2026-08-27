@@ -63,9 +63,16 @@ export function saveQueue(state: QueueState) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    /* quota estourada: o lote continua em memória nesta sessão */
+    // Referência em base64 costuma estourar a cota: guarda a fila sem ela.
+    try {
+      const { reference: _reference, ...light } = state;
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(light));
+    } catch {
+      /* o lote continua apenas em memória nesta sessão */
+    }
   }
 }
+
 
 export function advanceQueue(state: QueueState, cursor: number): QueueState {
   const next = { ...state, cursor };
