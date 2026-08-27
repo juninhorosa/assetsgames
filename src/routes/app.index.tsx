@@ -930,6 +930,46 @@ function Generator() {
           {busy ?? "Gerar asset"}
         </Button>
 
+        <section className="space-y-3 rounded-md border border-border bg-card/40 p-3">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+            Direções de câmera
+          </h2>
+          <Select value={directionSet} onValueChange={setDirectionSet}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DIRECTION_SETS.map((d) => (
+                <SelectItem key={d.id} value={d.id}>
+                  {d.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            O mesmo personagem e as mesmas ações vistos de cada direção — estilo, paleta e
+            proporções continuam travados pelo Style Profile.
+          </p>
+          {mode !== "spritesheet" && (
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={generateDirections}
+              disabled={busy !== null || findDirectionSet(directionSet).views.length === 0}
+            >
+              {packProgress ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Boxes className="size-4" />
+              )}
+              {packProgress
+                ? `Gerando ${packProgress.done}/${packProgress.total}`
+                : `Gerar em ${findDirectionSet(directionSet).views.length || 0} direções`}
+            </Button>
+          )}
+        </section>
+
+
         {mode === "spritesheet" && (
           <section className="space-y-3 rounded-md border border-border bg-card/40 p-3">
             <div className="flex items-center justify-between gap-2">
