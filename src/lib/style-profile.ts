@@ -265,7 +265,9 @@ export function buildPrompt(
         `Every cell shows the same character with identical proportions, identical outfit, identical colors, identical scale and identical camera angle, centered inside its cell, feet on the same baseline; only the pose changes between cells.`,
         `Uniform cell size, no gaps, no borders, no numbers, no captions, no onion-skin ghosting, no drop shadow outside the cell.`,
         `Inside every cell the character keeps the same scale and a constant empty safe margin around it (about 7% of the cell), never touching or crossing the cell edges, so all frames trim to the same size.`,
+        CROSS_ACTION_SCALE_LOCK,
         `Solid flat pure white background so it can be keyed out.`,
+
         styleLine + ".",
         view,
         "Full body, consistent proportions and the exact same facing direction across every frame." +
