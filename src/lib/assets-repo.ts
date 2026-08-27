@@ -7,8 +7,13 @@ export interface ProjectRow {
   name: string;
   description: string | null;
   style_profile: StyleProfile;
+  /** Orçamento de créditos do projeto (0 = sem limite). */
+  credit_budget?: number | null;
+  /** Preset de exportação padrão do projeto. */
+  export_preset?: Record<string, unknown> | null;
   created_at: string;
 }
+
 
 export interface AssetRow {
   id: string;

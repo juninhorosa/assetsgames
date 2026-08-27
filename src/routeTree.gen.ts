@@ -23,11 +23,13 @@ import { Route as ApiRosterRouteImport } from './routes/api/roster'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppBatchRouteImport } from './routes/app.batch'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
+import { Route as AppUsageRouteImport } from './routes/app.usage'
 import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
 import { Route as DocsConnectRouteImport } from './routes/docs.connect'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
+import { Route as AppSettingsKeysRouteImport } from './routes/app.settings.keys'
 import { Route as ApiPublicForge3dCapabilitiesRouteImport } from './routes/api/public/forge3d/capabilities'
 import { Route as ApiPublicForge3dGenerateRouteImport } from './routes/api/public/forge3d/generate'
 
@@ -103,6 +105,11 @@ const AppLibraryRoute = AppLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => AppRoute,
 } as any)
+const AppUsageRoute = AppUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => AppRoute,
+} as any)
 const DocsArchitectureRoute = DocsArchitectureRouteImport.update({
   id: '/docs/architecture',
   path: '/docs/architecture',
@@ -127,6 +134,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
 const AppAssetIdRoute = AppAssetIdRouteImport.update({
   id: '/asset/$id',
   path: '/asset/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsKeysRoute = AppSettingsKeysRouteImport.update({
+  id: '/settings/keys',
+  path: '/settings/keys',
   getParentRoute: () => AppRoute,
 } as any)
 const ApiPublicForge3dCapabilitiesRoute =
@@ -156,12 +168,14 @@ export interface FileRoutesByFullPath {
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
 }
@@ -178,12 +192,14 @@ export interface FileRoutesByTo {
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
   '/app': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
 }
@@ -202,12 +218,14 @@ export interface FileRoutesById {
   '/api/roster': typeof ApiRosterRoute
   '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
+  '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
 }
@@ -227,12 +245,14 @@ export interface FileRouteTypes {
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
+    | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
     | '/app/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
+    | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
   fileRoutesByTo: FileRoutesByTo
@@ -249,12 +269,14 @@ export interface FileRouteTypes {
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
+    | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
     | '/app'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
+    | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
   id:
@@ -272,12 +294,14 @@ export interface FileRouteTypes {
     | '/api/roster'
     | '/app/batch'
     | '/app/library'
+    | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
     | '/app/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/app/asset/$id'
+    | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
   fileRoutesById: FileRoutesById
@@ -402,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/usage': {
+      id: '/app/usage'
+      path: '/usage'
+      fullPath: '/app/usage'
+      preLoaderRoute: typeof AppUsageRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/docs/architecture': {
       id: '/docs/architecture'
       path: '/docs/architecture'
@@ -437,6 +468,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/settings/keys': {
+      id: '/app/settings/keys'
+      path: '/settings/keys'
+      fullPath: '/app/settings/keys'
+      preLoaderRoute: typeof AppSettingsKeysRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/public/forge3d/capabilities': {
       id: '/api/public/forge3d/capabilities'
       path: '/api/public/forge3d/capabilities'
@@ -457,15 +495,19 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppBatchRoute: typeof AppBatchRoute
   AppLibraryRoute: typeof AppLibraryRoute
+  AppUsageRoute: typeof AppUsageRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAssetIdRoute: typeof AppAssetIdRoute
+  AppSettingsKeysRoute: typeof AppSettingsKeysRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppBatchRoute: AppBatchRoute,
   AppLibraryRoute: AppLibraryRoute,
+  AppUsageRoute: AppUsageRoute,
   AppIndexRoute: AppIndexRoute,
   AppAssetIdRoute: AppAssetIdRoute,
+  AppSettingsKeysRoute: AppSettingsKeysRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
