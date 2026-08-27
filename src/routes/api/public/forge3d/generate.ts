@@ -57,6 +57,9 @@ const BodySchema = z.object({
   /** Enquadramento normalizado: fundo removido, escala/pivô fixos, tela quadrada. */
   frame: z.boolean().default(true),
   frameSize: z.number().int().min(64).max(2048).default(512),
+  /** Lado da célula (px) do sprite sheet normalizado. */
+  cellSize: z.number().int().min(32).max(512).default(128),
+
 });
 
 /** Baixa a imagem gerada e devolve os bytes PNG. */
