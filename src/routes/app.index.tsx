@@ -602,6 +602,7 @@ function Generator() {
                 frameCount: motion3d.length,
                 depth: reliefOpts.depth,
                 segments: reliefOpts.segments,
+                style: findModel3dStyle(model3dStyle).label,
               }
             : undefined,
         },
