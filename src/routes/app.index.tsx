@@ -1090,6 +1090,87 @@ function Generator() {
           {busy ?? "Gerar asset"}
         </Button>
 
+        {pendingQueue && busy === null && (
+          <section className="flex flex-wrap items-center gap-3 rounded-md border border-primary/40 bg-primary/5 p-3">
+            <div className="flex-1 text-xs">
+              <p className="font-medium">
+                Lote pendente — {pendingQueue.cursor}/{pendingQueue.jobs.length} concluídos
+              </p>
+              <p className="text-muted-foreground">
+                {pendingQueue.baseName} · iniciado em{" "}
+                {new Date(pendingQueue.createdAt).toLocaleString("pt-BR")}
+              </p>
+            </div>
+            <Button size="sm" onClick={() => runQueue(pendingQueue)}>
+              <PlayCircle className="size-4" />
+              Retomar lote
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                clearQueue();
+                setPendingQueue(null);
+              }}
+            >
+              <X className="size-4" />
+              Descartar
+            </Button>
+          </section>
+        )}
+
+        {busy !== null && packProgress && (
+          <Button
+            variant="ghost"
+            className="w-full text-xs"
+            onClick={() => {
+              cancelRef.current = true;
+            }}
+          >
+            Pausar lote depois do quadro atual
+          </Button>
+        )}
+
+        <section className="space-y-3 rounded-md border border-border bg-card/40 p-3">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+            Consistência do personagem
+          </h2>
+          <label className="flex cursor-pointer items-start gap-2 text-sm">
+            <Checkbox
+              checked={lockCharacter}
+              onCheckedChange={(v) => setLockCharacter(v === true)}
+            />
+            <span className="flex-1">
+              Travar aparência pela primeira imagem
+              <span className="block text-[11px] text-muted-foreground">
+                As demais ações e direções são geradas a partir dela, mantendo cores, roupas e
+                proporções idênticas.
+              </span>
+            </span>
+          </label>
+          {reference && (
+            <div className="flex items-center gap-3">
+              <span className="bg-checker size-14 shrink-0 overflow-hidden rounded border border-border">
+                <img
+                  src={reference}
+                  alt="Referência do personagem"
+                  className="size-full object-contain"
+                />
+              </span>
+              <div className="flex-1 text-[11px] text-muted-foreground">Referência ativa</div>
+              <Button size="sm" variant="ghost" onClick={() => setReference(null)}>
+                Limpar
+              </Button>
+            </div>
+          )}
+          {!reference && image && (
+            <Button size="sm" variant="secondary" onClick={() => setReference(image)}>
+              Usar imagem atual como referência
+            </Button>
+          )}
+        </section>
+
+
         <section className="space-y-3 rounded-md border border-border bg-card/40 p-3">
           <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
             Direções de câmera
