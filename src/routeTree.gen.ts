@@ -20,6 +20,7 @@ import { Route as AppBatchRouteImport } from './routes/app.batch'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
 import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
+import { Route as ApiPublicForge3dCapabilitiesRouteImport } from './routes/api/public/forge3d/capabilities'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,12 @@ const AppAssetIdRoute = AppAssetIdRouteImport.update({
   path: '/asset/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicForge3dCapabilitiesRoute =
+  ApiPublicForge3dCapabilitiesRouteImport.update({
+    id: '/api/public/forge3d/capabilities',
+    path: '/api/public/forge3d/capabilities',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app/': typeof AppIndexRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,6 +109,7 @@ export interface FileRoutesByTo {
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app': typeof AppIndexRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -115,6 +124,7 @@ export interface FileRoutesById {
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app/': typeof AppIndexRoute
   '/app/asset/$id': typeof AppAssetIdRoute
+  '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/docs/architecture'
     | '/app/'
     | '/app/asset/$id'
+    | '/api/public/forge3d/capabilities'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/docs/architecture'
     | '/app'
     | '/app/asset/$id'
+    | '/api/public/forge3d/capabilities'
   id:
     | '__root__'
     | '/'
@@ -155,6 +167,7 @@ export interface FileRouteTypes {
     | '/docs/architecture'
     | '/app/'
     | '/app/asset/$id'
+    | '/api/public/forge3d/capabilities'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -165,6 +178,7 @@ export interface RootRouteChildren {
   ApiGenerateAssetRoute: typeof ApiGenerateAssetRoute
   ApiRosterRoute: typeof ApiRosterRoute
   DocsArchitectureRoute: typeof DocsArchitectureRoute
+  ApiPublicForge3dCapabilitiesRoute: typeof ApiPublicForge3dCapabilitiesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -246,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssetIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/forge3d/capabilities': {
+      id: '/api/public/forge3d/capabilities'
+      path: '/api/public/forge3d/capabilities'
+      fullPath: '/api/public/forge3d/capabilities'
+      preLoaderRoute: typeof ApiPublicForge3dCapabilitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -273,6 +294,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGenerateAssetRoute: ApiGenerateAssetRoute,
   ApiRosterRoute: ApiRosterRoute,
   DocsArchitectureRoute: DocsArchitectureRoute,
+  ApiPublicForge3dCapabilitiesRoute: ApiPublicForge3dCapabilitiesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
