@@ -5,6 +5,7 @@ import {
   Box,
   Download,
   FolderPlus,
+  ListChecks,
   Loader2,
   Package,
   Save,
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
@@ -41,7 +43,9 @@ import { MaterialPreview3D } from "@/components/studio/MaterialPreview3D";
 import { Model3DPreview } from "@/components/studio/Model3DPreview";
 
 import {
-  ANIMATION_PRESETS,
+  ANIMATION_ACTIONS,
+  findAction,
+
   DEFAULT_STYLE_PROFILE,
   MODE_LABELS,
   STYLE_LABELS,
@@ -156,6 +160,17 @@ function Generator() {
   const [mode, setMode] = useState<AssetMode>("sprite");
   const [prompt, setPrompt] = useState("");
   const [animation, setAnimation] = useState<string>("walk");
+
+  function selectAction(id: string) {
+    setAnimation(id);
+    const action = findAction(id);
+    if (action) {
+      setColumns(action.columns);
+      setRows(action.rows);
+      setFps(action.fps);
+    }
+  }
+
   const [columns, setColumns] = useState(4);
   const [rows, setRows] = useState(2);
   const [uiKind, setUiKind] = useState<string>(UI_KINDS[0]!);
@@ -172,7 +187,10 @@ function Generator() {
   const [frames, setFrames] = useState<string[]>([]);
   const [rects, setRects] = useState<FrameRect[]>([]);
   const [cell, setCell] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-  const [fps] = useState(12);
+  const [fps, setFps] = useState(12);
+  const [packActions, setPackActions] = useState<string[]>(["idle", "walk", "run", "attack"]);
+  const [packProgress, setPackProgress] = useState<{ done: number; total: number } | null>(null);
+
   const [relief, setRelief] = useState<MeshData | null>(null);
   const [reliefOpts, setReliefOpts] = useState<ReliefOptions>(DEFAULT_RELIEF_OPTIONS);
 
@@ -236,6 +254,99 @@ function Generator() {
       setBusy(null);
     }
   }
+
+  /** Gera uma sheet por ação selecionada, fatia os quadros e salva cada uma na biblioteca. */
+  async function generatePack() {
+    if (!prompt.trim()) {
+      toast.error("Descreva o personagem antes de gerar o pack");
+      return;
+    }
+    if (!project) {
+      toast.error("Crie um projeto primeiro");
+      return;
+    }
+    if (packActions.length === 0) {
+      toast.error("Selecione pelo menos uma ação");
+      return;
+    }
+
+    const actions = ANIMATION_ACTIONS.filter((a) => packActions.includes(a.id));
+    setPackProgress({ done: 0, total: actions.length });
+    const baseName = name.trim() || prompt.trim().slice(0, 32);
+
+    try {
+      for (let i = 0; i < actions.length; i++) {
+        const action = actions[i]!;
+        setBusy(`Gerando ${action.label} (${i + 1}/${actions.length})`);
+        setIsFinal(false);
+        setImage(null);
+        resetDerived();
+
+        const actionPrompt = buildPrompt(prompt, profile, {
+          mode: "spritesheet",
+          animation: action.id,
+          columns: action.columns,
+          rows: action.rows,
+        });
+
+        let sheet = "";
+        await streamGenerate({ prompt: actionPrompt, size }, (dataUrl, final) => {
+          sheet = dataUrl;
+          setImage(dataUrl);
+          setIsFinal(final);
+        });
+        if (!sheet) throw new Error(`Falha ao gerar ${action.label}`);
+
+        const img = await loadImage(sheet);
+        const sliced = sliceSheet(img, action.columns, action.rows);
+        setAnimation(action.id);
+        setColumns(action.columns);
+        setRows(action.rows);
+        setFps(action.fps);
+        setFrames(sliced.frames);
+        setRects(sliced.rects);
+        setCell({ w: sliced.cellWidth, h: sliced.cellHeight });
+
+        await saveAsset({
+          projectId: project.id,
+          name: `${baseName} — ${action.label}`,
+          mode: "spritesheet",
+          prompt,
+          finalPrompt: actionPrompt,
+          params: {
+            mode: "spritesheet",
+            animation: action.id,
+            columns: action.columns,
+            rows: action.rows,
+            size,
+          },
+          image: sheet,
+          maps: {},
+          frames: sliced.frames,
+          animation: {
+            name: action.id,
+            fps: action.fps,
+            columns: action.columns,
+            rows: action.rows,
+            cellWidth: sliced.cellWidth,
+            cellHeight: sliced.cellHeight,
+            rects: sliced.rects,
+          },
+        });
+
+        setPackProgress({ done: i + 1, total: actions.length });
+      }
+      await qc.invalidateQueries({ queryKey: ["assets", project.id] });
+      toast.success(`${actions.length} animações salvas na biblioteca`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+      setPackProgress(null);
+    }
+  }
+
+
 
   async function applyEdit() {
     if (!image || !editInstruction.trim()) return;
@@ -538,20 +649,21 @@ function Generator() {
           {mode === "spritesheet" && (
             <>
               <div className="space-y-2">
-                <Label>Animação</Label>
-                <Select value={animation} onValueChange={setAnimation}>
+                <Label>Ação do personagem</Label>
+                <Select value={animation} onValueChange={selectAction}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ANIMATION_PRESETS.map((a) => (
-                      <SelectItem key={a} value={a}>
-                        {a}
+                    {ANIMATION_ACTIONS.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <Label>Colunas: {columns}</Label>
                 <Slider
@@ -607,6 +719,77 @@ function Generator() {
           {busy ?? "Gerar asset"}
         </Button>
 
+        {mode === "spritesheet" && (
+          <section className="space-y-3 rounded-md border border-border bg-card/40 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+                Pack de animações
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
+                  onClick={() => setPackActions(ANIMATION_ACTIONS.map((a) => a.id))}
+                >
+                  todas
+                </button>
+                <button
+                  type="button"
+                  className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
+                  onClick={() => setPackActions([])}
+                >
+                  limpar
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Uma sheet por ação, com grade e FPS próprios, fatiada e salva na biblioteca — mesmo
+              personagem e mesmo Style Profile em todas.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {ANIMATION_ACTIONS.map((a) => {
+                const checked = packActions.includes(a.id);
+                return (
+                  <label
+                    key={a.id}
+                    className="flex cursor-pointer items-center gap-2 rounded border border-border/60 px-2 py-1.5 text-sm hover:border-primary/50"
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) =>
+                        setPackActions((prev) =>
+                          v ? [...prev, a.id] : prev.filter((id) => id !== a.id),
+                        )
+                      }
+                    />
+                    <span className="flex-1">{a.label}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {a.columns * a.rows}f · {a.fps}fps
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={generatePack}
+              disabled={busy !== null || packActions.length === 0}
+            >
+              {packProgress ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ListChecks className="size-4" />
+              )}
+              {packProgress
+                ? `Gerando pack ${packProgress.done}/${packProgress.total}`
+                : `Gerar pack (${packActions.length} ações)`}
+            </Button>
+          </section>
+        )}
+
+
+
         <div className="bg-checker flex min-h-[360px] items-center justify-center overflow-hidden rounded-md border border-border">
           {image ? (
             <img
@@ -645,7 +828,7 @@ function Generator() {
         {frames.length > 0 && (
           <section className="space-y-3">
             <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-              Player de animação — {animation}
+              Player de animação — {findAction(animation)?.label ?? animation}
             </h2>
             <SpritePlayer
               frames={frames}
