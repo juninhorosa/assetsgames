@@ -14,7 +14,9 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApiEditAssetRouteImport } from './routes/api/edit-asset'
 import { Route as ApiGenerateAssetRouteImport } from './routes/api/generate-asset'
+import { Route as ApiRosterRouteImport } from './routes/api/roster'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppBatchRouteImport } from './routes/app.batch'
 import { Route as AppLibraryRouteImport } from './routes/app.library'
 import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
@@ -44,9 +46,19 @@ const ApiGenerateAssetRoute = ApiGenerateAssetRouteImport.update({
   path: '/api/generate-asset',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRosterRoute = ApiRosterRouteImport.update({
+  id: '/api/roster',
+  path: '/api/roster',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBatchRoute = AppBatchRouteImport.update({
+  id: '/batch',
+  path: '/batch',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLibraryRoute = AppLibraryRouteImport.update({
@@ -71,6 +83,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
+  '/api/roster': typeof ApiRosterRoute
+  '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app/': typeof AppIndexRoute
@@ -81,6 +95,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
+  '/api/roster': typeof ApiRosterRoute
+  '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app': typeof AppIndexRoute
@@ -93,6 +109,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/api/edit-asset': typeof ApiEditAssetRoute
   '/api/generate-asset': typeof ApiGenerateAssetRoute
+  '/api/roster': typeof ApiRosterRoute
+  '/app/batch': typeof AppBatchRoute
   '/app/library': typeof AppLibraryRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/app/': typeof AppIndexRoute
@@ -106,6 +124,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/api/edit-asset'
     | '/api/generate-asset'
+    | '/api/roster'
+    | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
     | '/app/'
@@ -116,6 +136,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/api/edit-asset'
     | '/api/generate-asset'
+    | '/api/roster'
+    | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
     | '/app'
@@ -127,6 +149,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/api/edit-asset'
     | '/api/generate-asset'
+    | '/api/roster'
+    | '/app/batch'
     | '/app/library'
     | '/docs/architecture'
     | '/app/'
@@ -139,6 +163,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiEditAssetRoute: typeof ApiEditAssetRoute
   ApiGenerateAssetRoute: typeof ApiGenerateAssetRoute
+  ApiRosterRoute: typeof ApiRosterRoute
   DocsArchitectureRoute: typeof DocsArchitectureRoute
 }
 
@@ -179,11 +204,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateAssetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/roster': {
+      id: '/api/roster'
+      path: '/api/roster'
+      fullPath: '/api/roster'
+      preLoaderRoute: typeof ApiRosterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/': {
       id: '/app/'
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/batch': {
+      id: '/app/batch'
+      path: '/batch'
+      fullPath: '/app/batch'
+      preLoaderRoute: typeof AppBatchRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/library': {
@@ -211,12 +250,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppBatchRoute: typeof AppBatchRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAssetIdRoute: typeof AppAssetIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppBatchRoute: AppBatchRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppIndexRoute: AppIndexRoute,
   AppAssetIdRoute: AppAssetIdRoute,
@@ -230,6 +271,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiEditAssetRoute: ApiEditAssetRoute,
   ApiGenerateAssetRoute: ApiGenerateAssetRoute,
+  ApiRosterRoute: ApiRosterRoute,
   DocsArchitectureRoute: DocsArchitectureRoute,
 }
 export const routeTree = rootRouteImport
