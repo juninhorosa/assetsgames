@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateApiKey, hashApiKey, keyPrefix } from "./api-keys.server";
+import { recordAuditServer } from "./audit-log.server";
 
 export interface ApiKeyRow {
   id: string;
@@ -44,7 +45,16 @@ export const createApiKey = createServerFn({ method: "POST" })
       .select("id,name,prefix,created_at")
       .single();
     if (error) throw new Error(error.message);
-    return { key: secret, id: (row as { id: string }).id };
+    const created = row as { id: string };
+    await recordAuditServer(context.supabase, {
+      action: "api_key.create",
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
+      targetType: "api_key",
+      targetId: created.id,
+      details: { name: data.name, prefix: keyPrefix(secret) },
+    });
+    return { key: secret, id: created.id };
   });
 
 /**
@@ -83,7 +93,20 @@ export const rotateApiKey = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (revokeErr) throw new Error(revokeErr.message);
 
-    return { key: secret, id: (row as { id: string }).id };
+    const rotated = row as { id: string };
+    await recordAuditServer(context.supabase, {
+      action: "api_key.rotate",
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
+      targetType: "api_key",
+      targetId: rotated.id,
+      details: {
+        name: (current as { name: string }).name,
+        rotated_from: data.id,
+        prefix: keyPrefix(secret),
+      },
+    });
+    return { key: secret, id: rotated.id };
   });
 
 /** Revogação imediata — a chave para de autenticar sem apagar o histórico. */
@@ -96,6 +119,13 @@ export const revokeApiKey = createServerFn({ method: "POST" })
       .update({ revoked_at: new Date().toISOString() })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    await recordAuditServer(context.supabase, {
+      action: "api_key.revoke",
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
+      targetType: "api_key",
+      targetId: data.id,
+    });
     return { ok: true };
   });
 
@@ -106,5 +136,12 @@ export const deleteApiKey = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("api_keys").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await recordAuditServer(context.supabase, {
+      action: "api_key.delete",
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
+      targetType: "api_key",
+      targetId: data.id,
+    });
     return { ok: true };
   });

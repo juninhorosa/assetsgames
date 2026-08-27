@@ -19,6 +19,7 @@ import { fetchProjects } from "@/lib/assets-repo";
 import { fetchRuns, summarizeRuns, updateCreditBudget } from "@/lib/runs-repo";
 import { formatCredits } from "@/lib/pricing";
 import { EXPORT_PRESETS } from "@/lib/export-presets";
+import { recordAudit } from "@/lib/audit-log";
 
 export const Route = createFileRoute("/app/usage")({
   head: () => ({
@@ -73,6 +74,12 @@ function UsagePage() {
     const value = Math.max(0, Number(budget) || 0);
     try {
       await updateCreditBudget(active.id, value);
+      await recordAudit({
+        action: "credits.update",
+        targetType: "project",
+        targetId: active.id,
+        details: { project: active.name, from: Number(active.credit_budget ?? 0), to: value },
+      });
       await qc.invalidateQueries({ queryKey: ["projects"] });
       toast.success(value > 0 ? "Orçamento atualizado." : "Orçamento removido (sem limite).");
     } catch (e) {
