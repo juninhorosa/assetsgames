@@ -67,3 +67,15 @@ export function trialStatus(p: AdminProfile): { label: string; active: boolean; 
   if (days > 0) return { label: `Trial · ${days}d restantes`, active: true, days };
   return { label: "Trial expirado", active: false, days: 0 };
 }
+
+export interface TrialUpdate {
+  plan?: string;
+  trial_ends_at?: string;
+  trial_credits?: number;
+}
+
+/** Ajusta plano/trial de uma conta (permitido apenas a admins pelo RLS). */
+export async function updateProfileTrial(userId: string, patch: TrialUpdate): Promise<void> {
+  const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
+  if (error) throw new Error(error.message);
+}
