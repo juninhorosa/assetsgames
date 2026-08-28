@@ -110,6 +110,10 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
         if (!verified && !legacyOk) return new Response("Chave inválida", { status: 401 });
 
 
+        const { spendGuardResponse } = await import("@/lib/spend-guard.server");
+        const guardBlocked = await spendGuardResponse(1, { publicApi: true });
+        if (guardBlocked) return guardBlocked;
+
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("LOVABLE_API_KEY ausente", { status: 500 });
 

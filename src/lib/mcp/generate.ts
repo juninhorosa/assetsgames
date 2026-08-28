@@ -62,6 +62,12 @@ export function composePrompt(input: {
 
 /** Gera uma imagem no gateway e devolve o PNG em base64 (sem prefixo data URL). */
 export async function generatePngBase64(prompt: string, size: string): Promise<string> {
+  const { checkSpendGuard, guardMessage } = await import("@/lib/spend-guard.server");
+  const guard = await checkSpendGuard(1);
+  if (guard.public_api_enabled === false) {
+    throw new Error("API/MCP desligada pelo administrador.");
+  }
+  if (!guard.allowed) throw new Error(guardMessage(guard));
   const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${lovableApiKey()}`, "Content-Type": "application/json" },

@@ -344,6 +344,36 @@ export type Database = {
           },
         ]
       }
+      platform_limits: {
+        Row: {
+          ai_enabled: boolean
+          daily_credit_cap: number
+          id: boolean
+          monthly_credit_cap: number
+          public_api_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ai_enabled?: boolean
+          daily_credit_cap?: number
+          id?: boolean
+          monthly_credit_cap?: number
+          public_api_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ai_enabled?: boolean
+          daily_credit_cap?: number
+          id?: boolean
+          monthly_credit_cap?: number
+          public_api_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -471,6 +501,7 @@ export type Database = {
         Args: { _components?: Json; _fingerprint: string }
         Returns: Json
       }
+      spend_guard_check: { Args: { _credits: number }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
