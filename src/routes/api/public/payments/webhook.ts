@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { verifyWebhook, EventName, type PaddleEnv } from "@/lib/paddle.server";
 
 let _supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
+function getSupabase(): any {
   if (!_supabase) {
     _supabase = createClient(
       process.env["SUPABASE_URL"]!,
