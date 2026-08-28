@@ -33,6 +33,7 @@ import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
 import { Route as AppSettingsKeysRouteImport } from './routes/app.settings.keys'
 import { Route as ApiPublicForge3dCapabilitiesRouteImport } from './routes/api/public/forge3d/capabilities'
 import { Route as ApiPublicForge3dGenerateRouteImport } from './routes/api/public/forge3d/generate'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -159,6 +160,12 @@ const ApiPublicForge3dGenerateRoute =
     path: '/api/public/forge3d/generate',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -210,6 +218,7 @@ export interface FileRoutesByTo {
   '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -237,6 +246,7 @@ export interface FileRoutesById {
   '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -316,6 +328,7 @@ export interface FileRouteTypes {
     | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -336,6 +349,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicForge3dCapabilitiesRoute: typeof ApiPublicForge3dCapabilitiesRoute
   ApiPublicForge3dGenerateRoute: typeof ApiPublicForge3dGenerateRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -508,6 +522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicForge3dGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -552,6 +573,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicForge3dCapabilitiesRoute: ApiPublicForge3dCapabilitiesRoute,
   ApiPublicForge3dGenerateRoute: ApiPublicForge3dGenerateRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
