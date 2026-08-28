@@ -29,7 +29,7 @@ const BodySchema = z.object({
   mode: z
     .enum(["sprite", "spritesheet", "texture", "ui", "model3d"])
     .default("sprite"),
-  style: z.enum(["pixel-art", "low-poly", "stylized", "pbr-realistic"]).nullable().default(null),
+  style: z.enum(["pixel-art", "tibia-retro", "low-poly", "stylized", "pbr-realistic"]).nullable().default(null),
   view: z
     .enum([
       "side-right",

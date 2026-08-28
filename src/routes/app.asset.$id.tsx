@@ -208,7 +208,7 @@ function AssetDetail() {
                 src={image}
                 alt={asset.name}
                 className="max-h-[520px] max-w-full object-contain"
-                style={style.style === "pixel-art" ? { imageRendering: "pixelated" } : undefined}
+                style={isPixelStyle(style.style) ? { imageRendering: "pixelated" } : undefined}
               />
             ) : (
               <span className="font-mono text-xs text-muted-foreground">carregando imagem…</span>
@@ -223,7 +223,7 @@ function AssetDetail() {
               <SpritePlayer
                 frames={frames}
                 initialFps={anim?.fps ?? 12}
-                pixelated={style.style === "pixel-art"}
+                pixelated={isPixelStyle(style.style)}
               />
             </section>
           )}

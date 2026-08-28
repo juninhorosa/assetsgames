@@ -12,7 +12,7 @@ export default defineTool({
     name: z.string().trim().min(1).describe("Project name."),
     description: z.string().nullable().describe("Optional short description."),
     style: z
-      .enum(["pixel-art", "low-poly", "stylized", "pbr-realistic"])
+      .enum(["pixel-art", "tibia-retro", "low-poly", "stylized", "pbr-realistic"])
       .nullable()
       .describe("Art style, default stylized."),
     view: z

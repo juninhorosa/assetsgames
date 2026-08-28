@@ -1335,7 +1335,7 @@ function Generator() {
               className={`max-h-[520px] w-auto max-w-full transition-[filter] duration-300 ${
                 isFinal ? "blur-0" : "blur-2xl"
               }`}
-              style={profile.style === "pixel-art" ? { imageRendering: "pixelated" } : undefined}
+              style={isPixelStyle(profile.style) ? { imageRendering: "pixelated" } : undefined}
             />
           ) : (
             <p className="px-6 text-center text-sm text-muted-foreground">
@@ -1370,7 +1370,7 @@ function Generator() {
             <SpritePlayer
               frames={frames}
               initialFps={fps}
-              pixelated={profile.style === "pixel-art"}
+              pixelated={isPixelStyle(profile.style)}
             />
           </section>
         )}
@@ -1393,7 +1393,7 @@ function Generator() {
             </p>
             <FrameEditor
               frames={frames}
-              pixelated={profile.style === "pixel-art"}
+              pixelated={isPixelStyle(profile.style)}
               onChange={applyFrameEdits}
             />
           </section>
