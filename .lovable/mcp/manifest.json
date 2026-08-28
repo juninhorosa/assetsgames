@@ -83,6 +83,7 @@
                   "type": "string",
                   "enum": [
                     "pixel-art",
+                    "tibia-retro",
                     "low-poly",
                     "stylized",
                     "pbr-realistic"

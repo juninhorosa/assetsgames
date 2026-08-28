@@ -16,7 +16,7 @@ import {
 import { SpritePlayer } from "@/components/studio/SpritePlayer";
 import { MaterialPreview3D } from "@/components/studio/MaterialPreview3D";
 import { MAP_LABELS, loadImage, sliceSheet, type MapType } from "@/lib/image-pipeline";
-import { DEFAULT_STYLE_PROFILE, MODE_LABELS, type StyleProfile } from "@/lib/style-profile";
+import { DEFAULT_STYLE_PROFILE, MODE_LABELS, isPixelStyle, type StyleProfile } from "@/lib/style-profile";
 import {
   ENGINE_LABELS,
   buildEngineZip,
@@ -208,7 +208,7 @@ function AssetDetail() {
                 src={image}
                 alt={asset.name}
                 className="max-h-[520px] max-w-full object-contain"
-                style={style.style === "pixel-art" ? { imageRendering: "pixelated" } : undefined}
+                style={isPixelStyle(style.style) ? { imageRendering: "pixelated" } : undefined}
               />
             ) : (
               <span className="font-mono text-xs text-muted-foreground">carregando imagem…</span>
@@ -223,7 +223,7 @@ function AssetDetail() {
               <SpritePlayer
                 frames={frames}
                 initialFps={anim?.fps ?? 12}
-                pixelated={style.style === "pixel-art"}
+                pixelated={isPixelStyle(style.style)}
               />
             </section>
           )}

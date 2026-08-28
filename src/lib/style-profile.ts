@@ -1,4 +1,9 @@
-export type StyleKey = "pixel-art" | "low-poly" | "stylized" | "pbr-realistic";
+export type StyleKey =
+  | "pixel-art"
+  | "tibia-retro"
+  | "low-poly"
+  | "stylized"
+  | "pbr-realistic";
 
 export type AssetMode = "sprite" | "spritesheet" | "texture" | "ui" | "model3d";
 
@@ -103,14 +108,22 @@ export const DEFAULT_STYLE_PROFILE: StyleProfile = {
 
 export const STYLE_LABELS: Record<StyleKey, string> = {
   "pixel-art": "Pixel Art",
+  "tibia-retro": "Tibia / MMORPG retro 2D",
   "low-poly": "Low Poly",
   stylized: "Stylized / Hand-painted",
   "pbr-realistic": "PBR Realista",
 };
 
+/** Estilos que devem ser renderizados sem suavização (image-rendering: pixelated). */
+export function isPixelStyle(style: StyleKey): boolean {
+  return style === "pixel-art" || style === "tibia-retro";
+}
+
 const STYLE_PROMPTS: Record<StyleKey, string> = {
   "pixel-art":
     "crisp pixel art, limited palette, hard pixel edges, no anti-aliasing, retro 16-bit game sprite aesthetic",
+  "tibia-retro":
+    "classic early-2000s 2D MMORPG sprite art in the exact spirit of Tibia: tiny low-resolution pixel sprite designed to fit a 64x64 pixel cell on a 32x32 tile grid, orthographic 3/4 top-down camera slightly above the subject, chunky readable silhouette with a big head and short stocky body, thick dark 1px outline on every shape, flat cel shading with only 2 or 3 tones per material and one hard shadow side, very limited dull medieval-fantasy palette (browns, greys, muted greens, deep reds), no gradients, no anti-aliasing, no glow, no bloom, no modern rendering, no cast shadow on the ground, simple gear and weapons readable at tiny size, faithful old-school MMORPG tileset look",
   "low-poly":
     "low poly game art look, flat faceted shading, simple geometric forms, clean silhouettes",
   stylized:
