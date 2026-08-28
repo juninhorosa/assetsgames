@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Users, Boxes, Activity, ScrollText } from "lucide-react";
+import { ShieldCheck, Users, Boxes, Activity, ScrollText, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/hooks/use-auth.tsx";
 import { formatCredits } from "@/lib/pricing";
 import {
+  duplicateGroups,
   fetchAdminCounts,
   fetchAdminProfiles,
   fetchAdminRuns,
@@ -106,6 +107,8 @@ function AdminPage() {
     return { credits, last24, failed, activeTrials };
   }, [runs, profiles]);
 
+  const dupes = useMemo(() => duplicateGroups(profiles), [profiles]);
+
   if (checking) {
     return (
       <main className="p-6 font-mono text-xs text-muted-foreground">verificando permissão…</main>
@@ -140,7 +143,12 @@ function AdminPage() {
       </header>
 
       <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={Users} label="Contas" value={String(profiles.length)} />
+        <Stat
+          icon={Users}
+          label="Contas"
+          value={String(profiles.length)}
+          hint={dupes.length ? `${dupes.length} grupo(s) com e-mail repetido` : "sem duplicidades"}
+        />
         <Stat icon={Activity} label="Trials ativos" value={String(stats.activeTrials)} />
         <Stat icon={Boxes} label="Projetos / assets" value={`${counts?.projects ?? 0} / ${counts?.assets ?? 0}`} />
         <Stat
@@ -175,6 +183,12 @@ function AdminPage() {
                     <div className="font-mono text-[11px] text-muted-foreground">
                       {p.email ?? p.id.slice(0, 8)}
                     </div>
+                    {p.duplicate_suspect && (
+                      <Badge variant="outline" className="mt-1 gap-1 text-[10px]">
+                        <Copy className="size-3" />
+                        conta repetida
+                      </Badge>
+                    )}
                   </td>
                   <td className="px-4 py-2">
                     <Badge variant={p.plan === "admin" ? "default" : "secondary"}>{p.plan}</Badge>
@@ -206,6 +220,40 @@ function AdminPage() {
             )}
           </tbody>
         </table>
+      </section>
+
+      <section className="panel mb-8 p-0">
+        <h2 className="flex items-center gap-2 border-b border-border px-4 py-3 font-mono text-xs uppercase tracking-wide">
+          <Copy className="size-3.5" />
+          Contas repetidas
+        </h2>
+        {dupes.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-muted-foreground">
+            Nenhuma repetição detectada. Contas novas com variação do mesmo e-mail (pontos,
+            +apelido, gmail/googlemail) entram marcadas e sem créditos de trial.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {dupes.map((g) => (
+              <li key={g.key} className="px-4 py-3">
+                <div className="font-mono text-[11px] uppercase text-muted-foreground">
+                  {g.key} · {g.accounts.length} contas
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {g.accounts.map((a, i) => (
+                    <Badge key={a.id} variant={i === 0 ? "secondary" : "outline"} className="gap-1">
+                      {a.email ?? a.id.slice(0, 8)}
+                      <span className="text-muted-foreground">
+                        {i === 0 ? "original" : "repetida"} ·{" "}
+                        {new Date(a.created_at).toLocaleDateString("pt-BR")}
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="panel mb-8 p-0">
