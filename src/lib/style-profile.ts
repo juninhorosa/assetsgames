@@ -1,4 +1,9 @@
-export type StyleKey = "pixel-art" | "low-poly" | "stylized" | "pbr-realistic";
+export type StyleKey =
+  | "pixel-art"
+  | "tibia-retro"
+  | "low-poly"
+  | "stylized"
+  | "pbr-realistic";
 
 export type AssetMode = "sprite" | "spritesheet" | "texture" | "ui" | "model3d";
 
