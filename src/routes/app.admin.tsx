@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Users, Boxes, Activity, ScrollText, Copy } from "lucide-react";
+import { ShieldCheck, Users, Boxes, Activity, ScrollText, Copy, Cpu } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +26,11 @@ import { formatCredits } from "@/lib/pricing";
 import {
   duplicateGroups,
   fetchAdminCounts,
+  fetchAdminDevices,
   fetchAdminProfiles,
   fetchAdminRuns,
   fetchIsAdmin,
+  sharedDeviceGroups,
   trialStatus,
   updateProfileTrial,
 } from "@/lib/admin-repo";
@@ -80,6 +82,11 @@ function AdminPage() {
     queryFn: fetchAdminRuns,
     enabled,
   });
+  const { data: devices = [] } = useQuery({
+    queryKey: ["admin-devices"],
+    queryFn: fetchAdminDevices,
+    enabled,
+  });
   const { data: counts } = useQuery({
     queryKey: ["admin-counts"],
     queryFn: fetchAdminCounts,
@@ -108,6 +115,7 @@ function AdminPage() {
   }, [runs, profiles]);
 
   const dupes = useMemo(() => duplicateGroups(profiles), [profiles]);
+  const sharedDevices = useMemo(() => sharedDeviceGroups(devices, profiles), [devices, profiles]);
 
   if (checking) {
     return (
