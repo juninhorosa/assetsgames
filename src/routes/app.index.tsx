@@ -73,6 +73,7 @@ import {
   type AssetMode,
   type StyleKey,
   type StyleProfile,
+  isPixelStyle,
 } from "@/lib/style-profile";
 import {
   DEFAULT_ALIGN_OPTIONS,

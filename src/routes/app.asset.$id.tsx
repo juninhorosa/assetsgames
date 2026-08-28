@@ -16,7 +16,7 @@ import {
 import { SpritePlayer } from "@/components/studio/SpritePlayer";
 import { MaterialPreview3D } from "@/components/studio/MaterialPreview3D";
 import { MAP_LABELS, loadImage, sliceSheet, type MapType } from "@/lib/image-pipeline";
-import { DEFAULT_STYLE_PROFILE, MODE_LABELS, type StyleProfile } from "@/lib/style-profile";
+import { DEFAULT_STYLE_PROFILE, MODE_LABELS, isPixelStyle, type StyleProfile } from "@/lib/style-profile";
 import {
   ENGINE_LABELS,
   buildEngineZip,
