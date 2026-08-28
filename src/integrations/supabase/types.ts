@@ -229,6 +229,33 @@ export type Database = {
         }
         Relationships: []
       }
+      device_fingerprints: {
+        Row: {
+          components: Json
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          user_id: string
+        }
+        Insert: {
+          components?: Json
+          fingerprint: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          user_id: string
+        }
+        Update: {
+          components?: Json
+          fingerprint?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       generation_runs: {
         Row: {
           action: string | null
@@ -440,6 +467,10 @@ export type Database = {
         Returns: boolean
       }
       normalize_email_key: { Args: { _email: string }; Returns: string }
+      register_device_fingerprint: {
+        Args: { _components?: Json; _fingerprint: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

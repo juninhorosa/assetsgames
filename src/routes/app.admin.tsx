@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ShieldCheck, Users, Boxes, Activity, ScrollText, Copy } from "lucide-react";
+import { ShieldCheck, Users, Boxes, Activity, ScrollText, Copy, Cpu } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +26,11 @@ import { formatCredits } from "@/lib/pricing";
 import {
   duplicateGroups,
   fetchAdminCounts,
+  fetchAdminDevices,
   fetchAdminProfiles,
   fetchAdminRuns,
   fetchIsAdmin,
+  sharedDeviceGroups,
   trialStatus,
   updateProfileTrial,
 } from "@/lib/admin-repo";
@@ -80,6 +82,11 @@ function AdminPage() {
     queryFn: fetchAdminRuns,
     enabled,
   });
+  const { data: devices = [] } = useQuery({
+    queryKey: ["admin-devices"],
+    queryFn: fetchAdminDevices,
+    enabled,
+  });
   const { data: counts } = useQuery({
     queryKey: ["admin-counts"],
     queryFn: fetchAdminCounts,
@@ -108,6 +115,7 @@ function AdminPage() {
   }, [runs, profiles]);
 
   const dupes = useMemo(() => duplicateGroups(profiles), [profiles]);
+  const sharedDevices = useMemo(() => sharedDeviceGroups(devices, profiles), [devices, profiles]);
 
   if (checking) {
     return (
@@ -249,6 +257,44 @@ function AdminPage() {
                       </span>
                     </Badge>
                   ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="panel mb-8 p-0">
+        <h2 className="flex items-center gap-2 border-b border-border px-4 py-3 font-mono text-xs uppercase tracking-wide">
+          <Cpu className="size-3.5" />
+          Mesmo hardware (dispositivo)
+        </h2>
+        {sharedDevices.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-muted-foreground">
+            Nenhuma máquina compartilhada detectada. A assinatura considera GPU/driver, núcleos de
+            CPU, memória, ecrã e render de canvas/áudio — a mesma máquina é reconhecida mesmo com
+            outro e-mail, navegador limpo ou janela anónima.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {sharedDevices.map((d) => (
+              <li key={d.fingerprint} className="px-4 py-3">
+                <div className="font-mono text-[11px] uppercase text-muted-foreground">
+                  {d.hardware} · {d.accounts.length} contas · visto{" "}
+                  {new Date(d.lastSeen).toLocaleString("pt-BR")}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {d.accounts.map((a, i) => (
+                    <Badge key={a.id} variant={i === 0 ? "secondary" : "outline"} className="gap-1">
+                      {a.email ?? a.id.slice(0, 8)}
+                      <span className="text-muted-foreground">
+                        {i === 0 ? "original" : "repetida"}
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="mt-1 font-mono text-[10px] text-muted-foreground">
+                  id {d.fingerprint.slice(0, 16)}…
                 </div>
               </li>
             ))}

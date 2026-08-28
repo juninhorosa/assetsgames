@@ -65,6 +65,68 @@ export async function fetchAdminCounts(): Promise<{ projects: number; assets: nu
   return { projects: projects.count ?? 0, assets: assets.count ?? 0 };
 }
 
+export interface AdminDevice {
+  id: string;
+  user_id: string;
+  fingerprint: string;
+  components: Record<string, unknown> | null;
+  first_seen_at: string;
+  last_seen_at: string;
+}
+
+/** Dispositivos registrados (assinatura de hardware) — visível apenas a admins. */
+export async function fetchAdminDevices(): Promise<AdminDevice[]> {
+  const { data, error } = await supabase
+    .from("device_fingerprints")
+    .select("id,user_id,fingerprint,components,first_seen_at,last_seen_at")
+    .order("last_seen_at", { ascending: false })
+    .limit(1000);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as AdminDevice[];
+}
+
+export interface SharedDevice {
+  fingerprint: string;
+  hardware: string;
+  accounts: AdminProfile[];
+  lastSeen: string;
+}
+
+/** Agrupa contas distintas que usaram exatamente o mesmo hardware. */
+export function sharedDeviceGroups(
+  devices: AdminDevice[],
+  profiles: AdminProfile[],
+): SharedDevice[] {
+  const byId = new Map(profiles.map((p) => [p.id, p]));
+  const map = new Map<string, { users: Set<string>; lastSeen: string; hardware: string }>();
+  for (const d of devices) {
+    const c = (d.components ?? {}) as Record<string, unknown>;
+    const hardware = [c["gpuRenderer"], c["platform"], c["cores"] ? `${c["cores"]} cores` : null]
+      .filter(Boolean)
+      .join(" · ");
+    const entry = map.get(d.fingerprint) ?? {
+      users: new Set<string>(),
+      lastSeen: d.last_seen_at,
+      hardware: hardware || "hardware desconhecido",
+    };
+    entry.users.add(d.user_id);
+    if (d.last_seen_at > entry.lastSeen) entry.lastSeen = d.last_seen_at;
+    map.set(d.fingerprint, entry);
+  }
+  return [...map.entries()]
+    .filter(([, v]) => v.users.size > 1)
+    .map(([fingerprint, v]) => ({
+      fingerprint,
+      hardware: v.hardware,
+      lastSeen: v.lastSeen,
+      accounts: [...v.users]
+        .map((id) => byId.get(id))
+        .filter((p): p is AdminProfile => Boolean(p))
+        .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    }))
+    .sort((a, b) => b.accounts.length - a.accounts.length);
+}
+
 export function trialStatus(p: AdminProfile): { label: string; active: boolean; days: number } {
   if (p.plan === "admin") return { label: "Admin (ilimitado)", active: true, days: Infinity };
   const ends = new Date(p.trial_ends_at).getTime();

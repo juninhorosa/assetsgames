@@ -51,6 +51,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const user: User | null = session?.user ?? null;
+
+  // Registra a assinatura de hardware da máquina (GPU/driver, CPU, memória,
+  // ecrã, render de canvas/áudio) para detetar a mesma pessoa a criar várias
+  // contas com e-mails diferentes.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void import("@/lib/device-fingerprint").then(async ({ registerDeviceFingerprint }) => {
+      if (cancelled) return;
+      await registerDeviceFingerprint();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
   return <AuthContext.Provider value={{ session, user, loading }}>{children}</AuthContext.Provider>;
 }
 
