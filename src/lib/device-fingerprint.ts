@@ -95,7 +95,7 @@ async function audioSignature(): Promise<string> {
     const buffer = await ctx.startRendering();
     const data = buffer.getChannelData(0);
     let sum = 0;
-    for (let i = 0; i < data.length; i += 1) sum += Math.abs(data[i]);
+    for (let i = 0; i < data.length; i += 1) sum += Math.abs(data[i] ?? 0);
     return sum.toFixed(6);
   } catch {
     return "none";
@@ -154,7 +154,7 @@ export async function registerDeviceFingerprint(): Promise<{ duplicate: boolean 
     const fingerprint = await computeDeviceFingerprint(components);
     const { data, error } = await supabase.rpc("register_device_fingerprint", {
       _fingerprint: fingerprint,
-      _components: components as unknown as Record<string, unknown>,
+      _components: components as unknown as never,
     });
     if (error) return null;
     const result = (data ?? {}) as { duplicate?: boolean };
