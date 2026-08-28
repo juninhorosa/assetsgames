@@ -18,6 +18,13 @@ export const Route = createFileRoute("/api/generate-asset")({
           return new Response("Prompt inválido", { status: 400 });
         }
 
+        const { spendGuardResponse } = await import("@/lib/spend-guard.server");
+        const { estimateCredits } = await import("@/lib/pricing");
+        const blocked = await spendGuardResponse(
+          estimateCredits({ images: 1, size, mode: "sprite" }),
+        );
+        if (blocked) return blocked;
+
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("LOVABLE_API_KEY ausente", { status: 500 });
 

@@ -26,6 +26,10 @@ export const Route = createFileRoute("/api/roster")({
         const kind = body.kind === "character" ? "playable characters / NPCs" : "monsters/enemies";
         if (!theme) return new Response("Missing theme", { status: 400 });
 
+        const { spendGuardResponse } = await import("@/lib/spend-guard.server");
+        const blocked = await spendGuardResponse(0.2);
+        if (blocked) return blocked;
+
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 

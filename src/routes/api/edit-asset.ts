@@ -4,6 +4,10 @@ export const Route = createFileRoute("/api/edit-asset")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const { spendGuardResponse } = await import("@/lib/spend-guard.server");
+        const blocked = await spendGuardResponse(1.15);
+        if (blocked) return blocked;
+
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("LOVABLE_API_KEY ausente", { status: 500 });
 

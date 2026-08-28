@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, Users, Boxes, Activity, ScrollText, Copy, Cpu } from "lucide-react";
 import { toast } from "sonner";
 
+import { SpendGuardPanel } from "@/components/admin/SpendGuardPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,6 +167,8 @@ function AdminPage() {
           hint={`${stats.last24} gerações em 24h · ${stats.failed} com erro`}
         />
       </section>
+
+      <SpendGuardPanel />
 
       <section className="panel mb-8 overflow-x-auto p-0">
         <h2 className="border-b border-border px-4 py-3 font-mono text-xs uppercase tracking-wide">
