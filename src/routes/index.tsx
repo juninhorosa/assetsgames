@@ -141,11 +141,26 @@ function Landing() {
       </main>
 
       <footer className="border-t border-border px-6 py-8 text-xs text-muted-foreground">
-        Forge3D Asset Studio — módulo 2D em produção, pipeline 3D documentado em{" "}
-        <Link to="/docs/architecture" className="text-primary underline">
-          Arquitetura
-        </Link>
-        .
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2">
+          <span>
+            AssetsForge — módulo 2D em produção, pipeline 3D documentado em{" "}
+            <Link to="/docs/architecture" className="text-primary underline">
+              Arquitetura
+            </Link>
+            .
+          </span>
+          <nav className="flex items-center gap-4">
+            <Link to="/legal/terms" className="underline hover:text-foreground">
+              Termos e Condições
+            </Link>
+            <Link to="/legal/privacy" className="underline hover:text-foreground">
+              Privacidade
+            </Link>
+            <Link to="/legal/refund" className="underline hover:text-foreground">
+              Reembolsos
+            </Link>
+          </nav>
+        </div>
       </footer>
     </div>
   );

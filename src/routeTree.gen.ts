@@ -28,6 +28,9 @@ import { Route as AppLibraryRouteImport } from './routes/app.library'
 import { Route as AppUsageRouteImport } from './routes/app.usage'
 import { Route as DocsArchitectureRouteImport } from './routes/docs.architecture'
 import { Route as DocsConnectRouteImport } from './routes/docs.connect'
+import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as LegalRefundRouteImport } from './routes/legal.refund'
+import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
@@ -133,6 +136,21 @@ const DocsConnectRoute = DocsConnectRouteImport.update({
   path: '/docs/connect',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRefundRoute = LegalRefundRouteImport.update({
+  id: '/legal/refund',
+  path: '/legal/refund',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
   path: '/.lovable/oauth/consent',
@@ -192,6 +210,9 @@ export interface FileRoutesByFullPath {
   '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refund': typeof LegalRefundRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -219,6 +240,9 @@ export interface FileRoutesByTo {
   '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refund': typeof LegalRefundRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/app': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -248,6 +272,9 @@ export interface FileRoutesById {
   '/app/usage': typeof AppUsageRoute
   '/docs/architecture': typeof DocsArchitectureRoute
   '/docs/connect': typeof DocsConnectRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/refund': typeof LegalRefundRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -278,6 +305,9 @@ export interface FileRouteTypes {
     | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
+    | '/legal/privacy'
+    | '/legal/refund'
+    | '/legal/terms'
     | '/app/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -305,6 +335,9 @@ export interface FileRouteTypes {
     | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
+    | '/legal/privacy'
+    | '/legal/refund'
+    | '/legal/terms'
     | '/app'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -333,6 +366,9 @@ export interface FileRouteTypes {
     | '/app/usage'
     | '/docs/architecture'
     | '/docs/connect'
+    | '/legal/privacy'
+    | '/legal/refund'
+    | '/legal/terms'
     | '/app/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -358,6 +394,9 @@ export interface RootRouteChildren {
   ApiRosterRoute: typeof ApiRosterRoute
   DocsArchitectureRoute: typeof DocsArchitectureRoute
   DocsConnectRoute: typeof DocsConnectRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalRefundRoute: typeof LegalRefundRoute
+  LegalTermsRoute: typeof LegalTermsRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicForge3dCapabilitiesRoute: typeof ApiPublicForge3dCapabilitiesRoute
@@ -500,6 +539,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/refund': {
+      id: '/legal/refund'
+      path: '/legal/refund'
+      fullPath: '/legal/refund'
+      preLoaderRoute: typeof LegalRefundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.lovable/oauth/consent': {
       id: '/.lovable/oauth/consent'
       path: '/.lovable/oauth/consent'
@@ -590,6 +650,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRosterRoute: ApiRosterRoute,
   DocsArchitectureRoute: DocsArchitectureRoute,
   DocsConnectRoute: DocsConnectRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalRefundRoute: LegalRefundRoute,
+  LegalTermsRoute: LegalTermsRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicForge3dCapabilitiesRoute: ApiPublicForge3dCapabilitiesRoute,
