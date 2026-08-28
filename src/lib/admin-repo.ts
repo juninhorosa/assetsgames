@@ -9,6 +9,9 @@ export interface AdminProfile {
   trial_ends_at: string;
   trial_credits: number;
   created_at: string;
+  email_key: string | null;
+  duplicate_suspect: boolean;
+  duplicate_of: string | null;
 }
 
 export interface AdminRun {
@@ -35,7 +38,9 @@ export async function fetchIsAdmin(userId: string): Promise<boolean> {
 export async function fetchAdminProfiles(): Promise<AdminProfile[]> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id,display_name,email,plan,trial_started_at,trial_ends_at,trial_credits,created_at")
+    .select(
+      "id,display_name,email,plan,trial_started_at,trial_ends_at,trial_credits,created_at,email_key,duplicate_suspect,duplicate_of",
+    )
     .order("created_at", { ascending: false })
     .limit(500);
   if (error) throw new Error(error.message);
@@ -78,4 +83,20 @@ export interface TrialUpdate {
 export async function updateProfileTrial(userId: string, patch: TrialUpdate): Promise<void> {
   const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
   if (error) throw new Error(error.message);
+}
+
+/** Agrupa contas que compartilham a mesma raiz de e-mail (pontos, +apelido, gmail/googlemail). */
+export function duplicateGroups(profiles: AdminProfile[]): { key: string; accounts: AdminProfile[] }[] {
+  const map = new Map<string, AdminProfile[]>();
+  for (const p of profiles) {
+    const key = p.email_key ?? p.email ?? p.id;
+    map.set(key, [...(map.get(key) ?? []), p]);
+  }
+  return [...map.entries()]
+    .filter(([, accounts]) => accounts.length > 1)
+    .map(([key, accounts]) => ({
+      key,
+      accounts: accounts.sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    }))
+    .sort((a, b) => b.accounts.length - a.accounts.length);
 }
