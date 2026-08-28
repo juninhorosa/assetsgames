@@ -321,7 +321,10 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          duplicate_of: string | null
+          duplicate_suspect: boolean
           email: string | null
+          email_key: string | null
           id: string
           last_seen_at: string | null
           plan: string
@@ -332,7 +335,10 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
+          duplicate_of?: string | null
+          duplicate_suspect?: boolean
           email?: string | null
+          email_key?: string | null
           id: string
           last_seen_at?: string | null
           plan?: string
@@ -343,7 +349,10 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
+          duplicate_of?: string | null
+          duplicate_suspect?: boolean
           email?: string | null
+          email_key?: string | null
           id?: string
           last_seen_at?: string | null
           plan?: string
@@ -351,7 +360,15 @@ export type Database = {
           trial_ends_at?: string
           trial_started_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
@@ -422,6 +439,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      normalize_email_key: { Args: { _email: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
