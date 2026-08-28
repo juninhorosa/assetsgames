@@ -14,6 +14,7 @@ import { Route as AiSpriteSheetGeneratorRouteImport } from './routes/ai-sprite-s
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -33,6 +34,7 @@ import { Route as AppAssetIdRouteImport } from './routes/app.asset.$id'
 import { Route as AppSettingsKeysRouteImport } from './routes/app.settings.keys'
 import { Route as ApiPublicForge3dCapabilitiesRouteImport } from './routes/api/public/forge3d/capabilities'
 import { Route as ApiPublicForge3dGenerateRouteImport } from './routes/api/public/forge3d/generate'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -57,6 +59,11 @@ const AuthRoute = AuthRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -159,6 +166,12 @@ const ApiPublicForge3dGenerateRoute =
     path: '/api/public/forge3d/generate',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -166,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -185,12 +199,14 @@ export interface FileRoutesByFullPath {
   '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-sprite-sheet-generator': typeof AiSpriteSheetGeneratorRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -210,6 +226,7 @@ export interface FileRoutesByTo {
   '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -218,6 +235,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -237,6 +255,7 @@ export interface FileRoutesById {
   '/app/settings/keys': typeof AppSettingsKeysRoute
   '/api/public/forge3d/capabilities': typeof ApiPublicForge3dCapabilitiesRoute
   '/api/public/forge3d/generate': typeof ApiPublicForge3dGenerateRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -246,6 +265,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/mcp'
+    | '/pricing'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -265,12 +285,14 @@ export interface FileRouteTypes {
     | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/ai-sprite-sheet-generator'
     | '/auth'
     | '/mcp'
+    | '/pricing'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -290,6 +312,7 @@ export interface FileRouteTypes {
     | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -297,6 +320,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/mcp'
+    | '/pricing'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -316,6 +340,7 @@ export interface FileRouteTypes {
     | '/app/settings/keys'
     | '/api/public/forge3d/capabilities'
     | '/api/public/forge3d/generate'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -324,6 +349,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
+  PricingRoute: typeof PricingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -336,6 +362,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicForge3dCapabilitiesRoute: typeof ApiPublicForge3dCapabilitiesRoute
   ApiPublicForge3dGenerateRoute: typeof ApiPublicForge3dGenerateRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -373,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -508,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicForge3dGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -539,6 +580,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   McpRoute: McpRoute,
+  PricingRoute: PricingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
@@ -552,6 +594,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicForge3dCapabilitiesRoute: ApiPublicForge3dCapabilitiesRoute,
   ApiPublicForge3dGenerateRoute: ApiPublicForge3dGenerateRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

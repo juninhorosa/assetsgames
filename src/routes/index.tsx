@@ -72,6 +72,10 @@ function Landing() {
           <Button variant="ghost" size="sm" asChild>
             <Link to="/docs/connect">Conectar IA</Link>
           </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/pricing">Planos</Link>
+          </Button>
+
 
           <Button size="sm" asChild>
             <Link to="/app">Abrir estúdio</Link>
