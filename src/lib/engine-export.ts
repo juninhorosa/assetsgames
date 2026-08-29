@@ -472,9 +472,9 @@ export function buildEngineFiles(
   files["AGENTS.md"] = strToU8(buildAgentGuide(manifest));
   files["README.md"] = strToU8(readme(asset, engine ?? "unity", preset));
 
-  const zipped = zipSync(files, { level: 6 });
-  return new Blob([zipped as unknown as BlobPart], { type: "application/zip" });
+  return files;
 }
+
 
 export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
