@@ -53,15 +53,36 @@ function AppLayout() {
   }
   if (!session) return null;
 
-  const nav = [
-    { to: "/app", label: "Gerador", icon: Wand2, exact: true },
-    { to: "/app/batch", label: "Elenco em lote", icon: Users, exact: false },
-    { to: "/app/library", label: "Biblioteca", icon: Images, exact: false },
-    { to: "/app/usage", label: "Uso", icon: Gauge, exact: false },
-    { to: "/app/settings/keys", label: "API keys", icon: KeyRound, exact: false },
-    ...(isAdmin ? [{ to: "/app/admin", label: "Admin", icon: ShieldCheck, exact: false }] : []),
+  const groups: { label: string; items: { to: string; label: string; icon: typeof Wand2; exact: boolean }[] }[] = [
+    {
+      label: "Criar",
+      items: [
+        { to: "/app", label: "Gerador", icon: Wand2, exact: true },
+        { to: "/app/batch", label: "Elenco em lote", icon: Users, exact: false },
+      ],
+    },
+    {
+      label: "Arquivos",
+      items: [{ to: "/app/library", label: "Biblioteca", icon: Images, exact: false }],
+    },
+    {
+      label: "Conta",
+      items: [
+        { to: "/app/usage", label: "Uso", icon: Gauge, exact: false },
+        { to: "/app/settings/keys", label: "API keys", icon: KeyRound, exact: false },
+        ...(isAdmin
+          ? [{ to: "/app/admin", label: "Admin", icon: ShieldCheck, exact: false }]
+          : []),
+      ],
+    },
+    {
+      label: "Docs",
+      items: [
+        { to: "/docs/connect", label: "Conectar IA", icon: Plug, exact: false },
+        { to: "/docs/architecture", label: "Arquitetura", icon: BookOpen, exact: false },
+      ],
+    },
   ];
-
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -71,31 +92,33 @@ function AppLayout() {
           <span className="font-mono text-xs tracking-tight">FORGE3D</span>
         </Link>
 
-        <nav className="flex items-center gap-1">
-          {nav.map((item) => {
-            const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
-            return (
-              <Button
-                key={item.to}
-                size="sm"
-                variant={active ? "secondary" : "ghost"}
-                asChild
+        <nav className="flex flex-wrap items-center gap-1">
+          {groups.map((group, gi) => (
+            <div key={group.label} className="flex items-center gap-1">
+              {gi > 0 && <Separator orientation="vertical" className="mx-1 h-5" />}
+              <span
+                className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground lg:inline"
+                aria-hidden="true"
               >
-                <Link to={item.to}>
-                  <item.icon className="size-4" />
-                  {item.label}
-                </Link>
-              </Button>
-            );
-          })}
-          <Button size="sm" variant="ghost" asChild>
-            <Link to="/docs/connect">Conectar IA</Link>
-          </Button>
-          <Button size="sm" variant="ghost" asChild>
-            <Link to="/docs/architecture">Arquitetura</Link>
-          </Button>
-
+                {group.label}
+              </span>
+              {group.items.map((item) => {
+                const active = item.exact
+                  ? pathname === item.to
+                  : pathname.startsWith(item.to);
+                return (
+                  <Button key={item.to} size="sm" variant={active ? "secondary" : "ghost"} asChild>
+                    <Link to={item.to}>
+                      <item.icon className="size-4" />
+                      {item.label}
+                    </Link>
+                  </Button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
+
 
         <div className="flex items-center gap-2">
           <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
