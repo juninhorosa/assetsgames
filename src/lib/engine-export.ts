@@ -341,8 +341,23 @@ export function buildEngineZip(
   engine: Engine | null,
   options: { pivot?: PivotPreset } = {},
 ): Blob {
+  const zipped = zipSync(buildEngineFiles(asset, engine, options), { level: 6 });
+  return new Blob([zipped as unknown as BlobPart], { type: "application/zip" });
+}
+
+/**
+ * Same content as {@link buildEngineZip}, but returned as a flat file map so
+ * several assets can be merged into a single archive (biblioteca / exportação
+ * em lote).
+ */
+export function buildEngineFiles(
+  asset: AssetExport,
+  engine: Engine | null,
+  options: { pivot?: PivotPreset } = {},
+): Record<string, Uint8Array> {
   const id = slug(asset.name);
   const files: Record<string, Uint8Array> = {};
+
   const preset = resolvePreset(engine ?? "unity", {
     pixelArt: asset.style.style === "pixel-art",
     tiling: asset.mode === "texture",
