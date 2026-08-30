@@ -9,8 +9,14 @@ import {
   type ViewKey,
   type AssetMode,
   type Model3dStyleKey,
+  type StyleProfile,
 } from "@/lib/style-profile";
 import { estimateCredits } from "@/lib/pricing";
+import {
+  buildMuOnlineMultiPackServer,
+  type ServerAssetExport,
+} from "@/lib/muonline-export.server";
+import { bytesToBase64 } from "@/lib/server-framing";
 import {
   DEFAULT_SERVER_FRAMING,
   DEFAULT_SHEET_FRAMING,
