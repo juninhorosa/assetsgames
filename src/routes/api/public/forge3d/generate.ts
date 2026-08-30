@@ -67,6 +67,11 @@ const BodySchema = z.object({
   cellSize: z.number().int().min(32).max(512).default(128),
   /** Altura alvo do corpo na tela (px). Auto-ajusta frameSize/cellSize. */
   targetBodyHeight: z.number().int().min(16).max(1024).nullable().default(null),
+  /**
+   * Formato de exportação do pacote final. "muonline" devolve, além dos PNGs,
+   * um ZIP base64 com .OZT/.OZJ, frames e anim.json prontos para o cliente MU.
+   */
+  exportFormat: z.enum(["none", "muonline"]).default("none"),
 
 
 });
