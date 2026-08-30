@@ -16,7 +16,6 @@ import {
   buildMuOnlineMultiPackServer,
   type ServerAssetExport,
 } from "@/lib/muonline-export.server";
-import { bytesToBase64 } from "@/lib/server-framing";
 import {
   DEFAULT_SERVER_FRAMING,
   DEFAULT_SHEET_FRAMING,
