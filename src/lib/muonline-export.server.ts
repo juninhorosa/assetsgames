@@ -11,7 +11,15 @@ import { encode as jpegEncode } from "jpeg-js";
 import { zipSync, strToU8 } from "fflate";
 import { dataUrlToBytes, type FrameRect, type MapType } from "./image-pipeline";
 import type { AssetMode, StyleProfile } from "./style-profile";
-import { slugify } from "./engine-export";
+
+function slugify(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "") || "asset"
+  );
+}
 
 const OZT_HEADER = 4;
 const OZJ_HEADER = 24;
