@@ -50,7 +50,7 @@ export interface ServerAssetExport {
 /** Descodifica PNG (bytes) em RGBA. */
 export function pngBytesToRgba(png: Uint8Array): Rgba {
   const decoded = UPNG.decode(png);
-  const frames = UPNG.toRGBA8(decoded) as ArrayBuffer[];
+  const frames = UPNG.toRGBA8(decoded) as unknown as ArrayBuffer[];
   const buf = frames[0] ?? new ArrayBuffer(0);
   return { width: decoded.width, height: decoded.height, data: new Uint8Array(buf) };
 }
