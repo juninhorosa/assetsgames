@@ -124,31 +124,38 @@ function AssetDetail() {
   const style: StyleProfile = { ...DEFAULT_STYLE_PROFILE, ...(project?.style_profile ?? {}) };
   const anim = animations[0];
 
+  function exportPayload() {
+    return {
+      name: asset.name,
+      mode: asset.asset_type,
+      style,
+      prompt: asset.final_prompt ?? asset.prompt,
+      image: image!,
+      maps,
+      frames,
+      frameRects: anim?.frame_data.rects ?? [],
+      animation:
+        anim && anim.frame_data.columns && anim.frame_data.rows
+          ? {
+              name: anim.name,
+              fps: anim.fps,
+              columns: anim.frame_data.columns,
+              rows: anim.frame_data.rows,
+            }
+          : undefined,
+    };
+  }
+
   function exportEngine(engine: Engine | null) {
     if (!image) return;
-    const zip = buildEngineZip(
-      {
-        name: asset.name,
-        mode: asset.asset_type,
-        style,
-        prompt: asset.final_prompt ?? asset.prompt,
-        image,
-        maps,
-        frames,
-        frameRects: anim?.frame_data.rects ?? [],
-        animation:
-          anim && anim.frame_data.columns && anim.frame_data.rows
-            ? {
-                name: anim.name,
-                fps: anim.fps,
-                columns: anim.frame_data.columns,
-                rows: anim.frame_data.rows,
-              }
-            : undefined,
-      },
-      engine,
-    );
+    const zip = buildEngineZip(exportPayload(), engine);
     downloadBlob(zip, `${slugify(asset.name)}-${engine ?? "ai-pack"}.zip`);
+  }
+
+  async function exportMuOnline() {
+    if (!image) return;
+    const { buildMuOnlineZip } = await import("@/lib/muonline-export");
+    downloadBlob(await buildMuOnlineZip(exportPayload()), `${slugify(asset.name)}-muonline.zip`);
   }
 
   return (
