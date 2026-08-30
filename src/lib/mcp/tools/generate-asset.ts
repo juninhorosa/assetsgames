@@ -16,6 +16,11 @@ import {
   frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
+import {
+  buildMuOnlineMultiPackServer,
+  type ServerAssetExport,
+} from "@/lib/muonline-export.server";
+import { zipSync } from "fflate";
 
 
 import { DIRECTION_SETS, VIEW_LABELS, type ViewKey } from "@/lib/style-profile";
@@ -97,6 +102,13 @@ export default defineTool({
       .nullable()
       .describe("Include the PNG bytes in the reply. Default true; false returns only URLs."),
 
+    export_format: z
+      .enum(["none", "muonline"])
+      .nullable()
+      .describe(
+        "Build an extra download pack. muonline = ZIP base64 with .OZT/.OZJ, per-frame .OZT and anim.json (fps, pivot bottom-center, frame order) ready for the MU Online client.",
+      ),
+
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {
@@ -149,6 +161,12 @@ export default defineTool({
 
     const results: Record<string, unknown>[] = [];
     const images: { type: "image"; data: string; mimeType: string }[] = [];
+    const packAssets: {
+      name: string;
+      b64: string;
+      action: { id: string; fps: number; columns: number; rows: number } | null;
+      view: string | null;
+    }[] = [];
 
     for (const view of views) {
       const finalPrompt = composePrompt({
@@ -189,8 +207,6 @@ export default defineTool({
 
       const b64 = framed ? bytesToBase64(pngBytes) : raw;
 
-
-
       const viewLabel = view ? VIEW_LABELS[view] : null;
       const name = [
         input.prompt.slice(0, 40),
@@ -199,6 +215,13 @@ export default defineTool({
       ]
         .filter(Boolean)
         .join(" — ");
+
+      packAssets.push({
+        name,
+        b64,
+        action: action ? { id: action.id, fps: action.fps, columns: action.columns, rows: action.rows } : null,
+        view: view ?? profile.view,
+      });
 
       const { data: asset, error } = await supabase
         .from("assets")
@@ -282,7 +305,29 @@ export default defineTool({
       }
     }
 
-    const payload = { project_id: projectId, style_lock: profile, results };
+    let muonline: { zipBase64: string; fileCount: number } | undefined;
+    if (input.export_format === "muonline" && packAssets.length) {
+      const assets: ServerAssetExport[] = packAssets.map((a) => ({
+        name: a.name,
+        mode,
+        style: profile as unknown as never,
+        prompt: input.prompt,
+        image: `data:image/png;base64,${a.b64}`,
+        animation: a.action
+          ? { name: a.action.id, fps: a.action.fps, columns: a.action.columns, rows: a.action.rows }
+          : undefined,
+      }));
+      const files = await buildMuOnlineMultiPackServer(assets);
+      const zipped = zipSync(files, { level: 6 }) as Uint8Array;
+      muonline = { zipBase64: bytesToBase64(zipped), fileCount: Object.keys(files).length };
+    }
+
+    const payload = {
+      project_id: projectId,
+      style_lock: profile,
+      results,
+      ...(muonline ? { export: { format: "muonline", ...muonline } } : {}),
+    };
     return {
       content: [{ type: "text", text: JSON.stringify(payload, null, 2) }, ...images],
       structuredContent: payload,

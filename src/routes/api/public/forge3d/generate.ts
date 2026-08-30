@@ -9,8 +9,13 @@ import {
   type ViewKey,
   type AssetMode,
   type Model3dStyleKey,
+  type StyleProfile,
 } from "@/lib/style-profile";
 import { estimateCredits } from "@/lib/pricing";
+import {
+  buildMuOnlineMultiPackServer,
+  type ServerAssetExport,
+} from "@/lib/muonline-export.server";
 import {
   DEFAULT_SERVER_FRAMING,
   DEFAULT_SHEET_FRAMING,
@@ -61,6 +66,11 @@ const BodySchema = z.object({
   cellSize: z.number().int().min(32).max(512).default(128),
   /** Altura alvo do corpo na tela (px). Auto-ajusta frameSize/cellSize. */
   targetBodyHeight: z.number().int().min(16).max(1024).nullable().default(null),
+  /**
+   * Formato de exportação do pacote final. "muonline" devolve, além dos PNGs,
+   * um ZIP base64 com .OZT/.OZJ, frames e anim.json prontos para o cliente MU.
+   */
+  exportFormat: z.enum(["none", "muonline"]).default("none"),
 
 
 });
@@ -276,7 +286,47 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
           });
         }
 
-        return Response.json({ styleLock: profile, count: results.length, results });
+        let muonline: { zipBase64: string; fileCount: number } | undefined;
+        if (b.exportFormat === "muonline" && results.length) {
+          const assets: ServerAssetExport[] = results.map((r) => {
+            const rr = r as {
+              mode?: string;
+              action?: string | null;
+              view?: string | null;
+              prompt?: string;
+              image?: string;
+              grid?: { columns: number; rows: number } | null;
+              fps?: number | null;
+            };
+            return {
+              name: [b.prompt, rr.action, rr.view].filter(Boolean).join(" — "),
+              mode: b.mode,
+              style: profile as unknown as StyleProfile,
+              prompt: b.prompt,
+              image: rr.image ?? "",
+              animation:
+                rr.grid && rr.action
+                  ? {
+                      name: rr.action,
+                      fps: rr.fps ?? 12,
+                      columns: rr.grid.columns,
+                      rows: rr.grid.rows,
+                    }
+                  : undefined,
+            };
+          });
+          const { zipSync } = await import("fflate");
+          const files = await buildMuOnlineMultiPackServer(assets);
+          const zipped = zipSync(files, { level: 6 }) as Uint8Array;
+          muonline = { zipBase64: bytesToBase64(zipped), fileCount: Object.keys(files).length };
+        }
+
+        return Response.json({
+          styleLock: profile,
+          count: results.length,
+          results,
+          ...(muonline ? { export: { format: "muonline", ...muonline } } : {}),
+        });
 
       },
     },

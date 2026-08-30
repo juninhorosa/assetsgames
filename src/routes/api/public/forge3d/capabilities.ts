@@ -37,9 +37,15 @@ export const Route = createFileRoute("/api/public/forge3d/capabilities")({
                 detail: "1..10",
                 extra: "string — notas de direção de arte",
                 size: "1024x1024 | 1024x1536 | 1536x1024",
+                exportFormat: "none | muonline — muonline devolve um ZIP base64 com .OZT/.OZJ, frames e anim.json",
               },
               response:
-                "{ results: [{ mode, action, view, prompt, image (data URL png), grid?, fps? }] }",
+                "{ results: [{ mode, action, view, prompt, image (data URL png), grid?, fps? }], export?: { format: 'muonline', zipBase64, fileCount } }",
+            },
+            muonline: {
+              description:
+                "Exportação MU Online (cliente Webzen/MuEmu/OpenMU). Gera .OZT (TGA + 4 bytes) e .OZJ (JPEG + 24 bytes), frames por movimento e anim.json com fps, pivô bottom-center e ordem dos frames.",
+              files: ["Data/Object/Forge3D/<id>.OZT", "<id>.OZJ", "frames/*.OZT", "<id>.anim.json", "raw/<id>.tga", "README_MUONLINE.md"],
             },
             modes: Object.entries(MODE_LABELS).map(([id, label]) => ({ id, label })),
             styles: Object.entries(STYLE_LABELS).map(([id, label]) => ({ id, label })),
