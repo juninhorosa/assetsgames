@@ -312,12 +312,8 @@ export default defineTool({
 
     let muonline: { zipBase64: string; fileCount: number } | undefined;
     if (input.export_format === "muonline" && packAssets.length) {
-      const { buildMuOnlineMultiPackServer, type ServerAssetExport } = await import(
-        "@/lib/muonline-export.server"
-      );
-      const { zipSync } = await import("fflate");
       const assets: ServerAssetExport[] = packAssets.map((a) => ({
-        name: [a.name].join(""),
+        name: a.name,
         mode,
         style: profile as unknown as never,
         prompt: input.prompt,
