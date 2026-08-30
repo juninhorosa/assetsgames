@@ -156,6 +156,12 @@ export default defineTool({
 
     const results: Record<string, unknown>[] = [];
     const images: { type: "image"; data: string; mimeType: string }[] = [];
+    const packAssets: {
+      name: string;
+      b64: string;
+      action: { id: string; fps: number; columns: number; rows: number } | null;
+      view: string | null;
+    }[] = [];
 
     for (const view of views) {
       const finalPrompt = composePrompt({
