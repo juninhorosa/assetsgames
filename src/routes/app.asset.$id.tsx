@@ -199,6 +199,9 @@ function AssetDetail() {
                   {ENGINE_LABELS[engine]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuItem onClick={() => exportMuOnline()}>
+                MU Online (OZT/OZJ)
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => exportEngine(null)}>
                 Pacote para IA (manifesto)
               </DropdownMenuItem>
