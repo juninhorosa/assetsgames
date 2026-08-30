@@ -279,6 +279,7 @@ function Library() {
                   {ENGINE_LABELS[e]}
                 </SelectItem>
               ))}
+              <SelectItem value="muonline">MU Online (OZT/OZJ)</SelectItem>
               <SelectItem value="ai">Pacote para IA (tudo)</SelectItem>
             </SelectContent>
           </Select>
