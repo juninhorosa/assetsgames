@@ -202,6 +202,16 @@ export default defineTool({
 
       const b64 = framed ? bytesToBase64(pngBytes) : raw;
 
+      packAssets.push({
+        name,
+        b64,
+        action: action ? { id: action.id, fps: action.fps, columns: action.columns, rows: action.rows } : null,
+        view: view ?? profile.view,
+      });
+
+
+
+
 
 
       const viewLabel = view ? VIEW_LABELS[view] : null;
