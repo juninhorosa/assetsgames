@@ -287,7 +287,47 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
           });
         }
 
-        return Response.json({ styleLock: profile, count: results.length, results });
+        let muonline: { zipBase64: string; fileCount: number } | undefined;
+        if (b.exportFormat === "muonline" && results.length) {
+          const assets: ServerAssetExport[] = results.map((r) => {
+            const rr = r as {
+              mode?: string;
+              action?: string | null;
+              view?: string | null;
+              prompt?: string;
+              image?: string;
+              grid?: { columns: number; rows: number } | null;
+              fps?: number | null;
+            };
+            return {
+              name: [b.prompt, rr.action, rr.view].filter(Boolean).join(" — "),
+              mode: b.mode,
+              style: profile as unknown as StyleProfile,
+              prompt: b.prompt,
+              image: rr.image ?? "",
+              animation:
+                rr.grid && rr.action
+                  ? {
+                      name: rr.action,
+                      fps: rr.fps ?? 12,
+                      columns: rr.grid.columns,
+                      rows: rr.grid.rows,
+                    }
+                  : undefined,
+            };
+          });
+          const { zipSync } = await import("fflate");
+          const files = await buildMuOnlineMultiPackServer(assets);
+          const zipped = zipSync(files, { level: 6 }) as Uint8Array;
+          muonline = { zipBase64: bytesToBase64(zipped), fileCount: Object.keys(files).length };
+        }
+
+        return Response.json({
+          styleLock: profile,
+          count: results.length,
+          results,
+          ...(muonline ? { export: { format: "muonline", ...muonline } } : {}),
+        });
 
       },
     },
