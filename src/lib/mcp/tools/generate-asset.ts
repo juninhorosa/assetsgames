@@ -305,7 +305,33 @@ export default defineTool({
       }
     }
 
-    const payload = { project_id: projectId, style_lock: profile, results };
+    let muonline: { zipBase64: string; fileCount: number } | undefined;
+    if (input.export_format === "muonline" && packAssets.length) {
+      const { buildMuOnlineMultiPackServer, type ServerAssetExport } = await import(
+        "@/lib/muonline-export.server"
+      );
+      const { zipSync } = await import("fflate");
+      const assets: ServerAssetExport[] = packAssets.map((a) => ({
+        name: [a.name].join(""),
+        mode,
+        style: profile as unknown as never,
+        prompt: input.prompt,
+        image: `data:image/png;base64,${a.b64}`,
+        animation: a.action
+          ? { name: a.action.id, fps: a.action.fps, columns: a.action.columns, rows: a.action.rows }
+          : undefined,
+      }));
+      const files = await buildMuOnlineMultiPackServer(assets);
+      const zipped = zipSync(files, { level: 6 }) as Uint8Array;
+      muonline = { zipBase64: bytesToBase64(zipped), fileCount: Object.keys(files).length };
+    }
+
+    const payload = {
+      project_id: projectId,
+      style_lock: profile,
+      results,
+      ...(muonline ? { export: { format: "muonline", ...muonline } } : {}),
+    };
     return {
       content: [{ type: "text", text: JSON.stringify(payload, null, 2) }, ...images],
       structuredContent: payload,
