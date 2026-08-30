@@ -1709,6 +1709,9 @@ function Generator() {
                   {ENGINE_LABELS[engine]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuItem onClick={() => exportMuOnline()}>
+                MU Online (OZT/OZJ)
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => exportEngine(null)}>
                 <Bot className="size-4" />
                 Pacote para IA (manifesto)
