@@ -53,7 +53,7 @@ export const Route = createFileRoute("/app/library")({
 });
 
 type SortKey = "recent" | "oldest" | "name";
-type ExportTarget = Engine | "ai";
+type ExportTarget = Engine | "ai" | "muonline";
 
 function Library() {
   const qc = useQueryClient();
