@@ -112,7 +112,12 @@ export async function buildLibraryZip(
     JSON.stringify(
       {
         generator: "Forge3D Asset Studio",
-        engine: engine ? ENGINE_LABELS[engine] : "engine-agnostic (pacote para IA)",
+        engine:
+          engine === "muonline"
+            ? "MU Online (OZT/OZJ)"
+            : engine
+              ? ENGINE_LABELS[engine]
+              : "engine-agnostic (pacote para IA)",
         exportedAt: new Date().toISOString(),
         assets: assets.map((a) => ({
           name: a.name,
