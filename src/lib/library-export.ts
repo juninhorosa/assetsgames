@@ -95,7 +95,11 @@ export async function buildLibraryZip(
       while (used.has(folder)) folder = `${slugify(asset.name)}_${n++}`;
       used.add(folder);
 
-      for (const [path, bytes] of Object.entries(buildEngineFiles(exportInput, engine))) {
+      const built =
+        engine === "muonline"
+          ? await (await import("./muonline-export")).buildMuOnlineFiles(exportInput)
+          : buildEngineFiles(exportInput, engine);
+      for (const [path, bytes] of Object.entries(built)) {
         files[`${folder}/${path}`] = bytes;
       }
       included++;
