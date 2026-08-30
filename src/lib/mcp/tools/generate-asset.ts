@@ -16,6 +16,11 @@ import {
   frameSpriteSheetPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
+import {
+  buildMuOnlineMultiPackServer,
+  type ServerAssetExport,
+} from "@/lib/muonline-export.server";
+import { zipSync } from "fflate";
 
 
 import { DIRECTION_SETS, VIEW_LABELS, type ViewKey } from "@/lib/style-profile";
