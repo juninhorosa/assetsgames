@@ -223,22 +223,6 @@ export default defineTool({
         view: view ?? profile.view,
       });
 
-
-
-
-
-
-
-
-      const viewLabel = view ? VIEW_LABELS[view] : null;
-      const name = [
-        input.prompt.slice(0, 40),
-        action ? action.label : null,
-        viewLabel,
-      ]
-        .filter(Boolean)
-        .join(" — ");
-
       const { data: asset, error } = await supabase
         .from("assets")
         .insert({
