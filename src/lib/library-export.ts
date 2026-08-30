@@ -40,7 +40,7 @@ export interface LibraryExportProgress {
 export async function buildLibraryZip(
   assets: AssetRow[],
   style: StyleProfile,
-  engine: Engine | null,
+  engine: Engine | null | "muonline",
   onProgress?: (p: LibraryExportProgress) => void,
 ): Promise<{ blob: Blob; included: number; skipped: string[] }> {
   const files: Record<string, Uint8Array> = {};
