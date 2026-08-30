@@ -97,6 +97,13 @@ export default defineTool({
       .nullable()
       .describe("Include the PNG bytes in the reply. Default true; false returns only URLs."),
 
+    export_format: z
+      .enum(["none", "muonline"])
+      .nullable()
+      .describe(
+        "Build an extra download pack. muonline = ZIP base64 with .OZT/.OZJ, per-frame .OZT and anim.json (fps, pivot bottom-center, frame order) ready for the MU Online client.",
+      ),
+
   },
   annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   handler: async (input, ctx) => {

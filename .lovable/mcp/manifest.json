@@ -353,6 +353,21 @@
                 }
               ],
               "description": "Include the PNG bytes in the reply. Default true; false returns only URLs."
+            },
+            "export_format": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "muonline"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Build an extra download pack. muonline = ZIP base64 with .OZT/.OZJ, per-frame .OZT and anim.json (fps, pivot bottom-center, frame order) ready for the MU Online client."
             }
           },
           "required": [
@@ -368,7 +383,8 @@
             "frame",
             "frame_size",
             "target_body_height",
-            "return_images"
+            "return_images",
+            "export_format"
           ]
         },
         "outputSchema": null
