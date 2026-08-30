@@ -104,7 +104,7 @@ export async function dataUrlToOzjServer(
   }
   const jpeg = jpegEncode(
     { data: flat, width: rgba.width, height: rgba.height },
-    0.92,
+    92,
   );
   return withJunkHeader(jpeg.data as Uint8Array, OZJ_HEADER);
 }
