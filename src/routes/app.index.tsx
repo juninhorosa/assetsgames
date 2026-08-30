@@ -851,47 +851,63 @@ function Generator() {
     return models;
   }
 
+  async function buildExportPayload(id: string) {
+    return {
+      name: name.trim() || "asset",
+      mode,
+      style: profile,
+      prompt: finalPrompt,
+      image: image!,
+      maps,
+      frames,
+      frameRects: rects,
+      animation:
+        mode === "spritesheet" && frames.length
+          ? {
+              name: animation,
+              label: findAction(animation)?.label,
+              fps,
+              columns,
+              rows,
+            }
+          : undefined,
+      models: await collectModels(id),
+      motion3d: motion3d
+        ? {
+            fps,
+            frameCount: motion3d.length,
+            depth: reliefOpts.depth,
+            segments: reliefOpts.segments,
+            style: findModel3dStyle(model3dStyle).label,
+          }
+        : undefined,
+    };
+  }
+
   async function exportEngine(engine: Engine | null) {
     if (!image) return;
     const id = slugify(name || "asset");
     setBusy("Empacotando");
     try {
-      const models = await collectModels(id);
-      const zip = buildEngineZip(
-        {
-          name: name.trim() || "asset",
-          mode,
-          style: profile,
-          prompt: finalPrompt,
-          image,
-          maps,
-          frames,
-          frameRects: rects,
-          animation:
-            mode === "spritesheet" && frames.length
-              ? {
-                  name: animation,
-                  label: findAction(animation)?.label,
-                  fps,
-                  columns,
-                  rows,
-                }
-              : undefined,
-          models,
-          motion3d: motion3d
-            ? {
-                fps,
-                frameCount: motion3d.length,
-                depth: reliefOpts.depth,
-                segments: reliefOpts.segments,
-                style: findModel3dStyle(model3dStyle).label,
-              }
-            : undefined,
-        },
-        engine,
-      );
+      const zip = buildEngineZip(await buildExportPayload(id), engine);
       downloadBlob(zip, `${id}-${engine ?? "ai-pack"}.zip`);
       toast.success(engine ? `Pacote ${engine} pronto` : "Pacote para IA pronto");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function exportMuOnline() {
+    if (!image) return;
+    const id = slugify(name || "asset");
+    setBusy("Convertendo para OZT");
+    try {
+      const { buildMuOnlineZip } = await import("@/lib/muonline-export");
+      const zip = await buildMuOnlineZip(await buildExportPayload(id));
+      downloadBlob(zip, `${id}-muonline.zip`);
+      toast.success("Pacote MU Online (OZT/OZJ) pronto");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -1693,6 +1709,9 @@ function Generator() {
                   {ENGINE_LABELS[engine]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuItem onClick={() => exportMuOnline()}>
+                MU Online (OZT/OZJ)
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => exportEngine(null)}>
                 <Bot className="size-4" />
                 Pacote para IA (manifesto)

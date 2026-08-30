@@ -53,7 +53,7 @@ export const Route = createFileRoute("/app/library")({
 });
 
 type SortKey = "recent" | "oldest" | "name";
-type ExportTarget = Engine | "ai";
+type ExportTarget = Engine | "ai" | "muonline";
 
 function Library() {
   const qc = useQueryClient();
@@ -279,6 +279,7 @@ function Library() {
                   {ENGINE_LABELS[e]}
                 </SelectItem>
               ))}
+              <SelectItem value="muonline">MU Online (OZT/OZJ)</SelectItem>
               <SelectItem value="ai">Pacote para IA (tudo)</SelectItem>
             </SelectContent>
           </Select>
