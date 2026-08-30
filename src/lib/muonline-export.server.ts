@@ -179,10 +179,14 @@ Gerado pelo Forge3D Asset Studio (API/MCP).
  * Se o asset for uma sprite sheet sem `frames` já recortados, recorta a grelha
  * automaticamente a partir da imagem principal.
  */
-export async function buildMuOnlineFilesServer(
+/**
+ * Constrói os ficheiros de um único asset (sem README) com um id explícito,
+ * para que vários assets possam partilhar o mesmo ZIP sem colisão de chaves.
+ */
+async function buildAssetFilesServer(
   asset: ServerAssetExport,
-): Promise<Record<string, Uint8Array>> {
-  const id = slugify(asset.name);
+  id: string,
+): Promise<{ files: Record<string, Uint8Array>; frameCount: number }> {
   const files: Record<string, Uint8Array> = {};
   const base = `Data/Object/Forge3D`;
 
@@ -251,7 +255,56 @@ export async function buildMuOnlineFilesServer(
     ),
   );
 
-  files["README_MUONLINE.md"] = strToU8(readme(asset, id, frameNames.length));
+  return { files, frameCount: frameNames.length };
+}
+
+/**
+ * Constrói o mapa de ficheiros do pacote MU Online no servidor.
+ * Se o asset for uma sprite sheet sem `frames` já recortados, recorta a grelha
+ * automaticamente a partir da imagem principal.
+ */
+export async function buildMuOnlineFilesServer(
+  asset: ServerAssetExport,
+): Promise<Record<string, Uint8Array>> {
+  const id = slugify(asset.name);
+  const { files, frameCount } = await buildAssetFilesServer(asset, id);
+  files["README_MUONLINE.md"] = strToU8(readme(asset, id, frameCount));
+  return files;
+}
+
+/**
+ * Pacote MU Online combinando vários assets (várias direções/ações) num único
+ * ZIP. Cada asset fica com o seu próprio id (slug único por nome) e o seu
+ * próprio `anim.json`; o README e um `manifest.json` global são escritos uma vez.
+ */
+export async function buildMuOnlineMultiPackServer(
+  assets: ServerAssetExport[],
+): Promise<Record<string, Uint8Array>> {
+  const files: Record<string, Uint8Array> = {};
+  const usedIds = new Set<string>();
+  const manifest: unknown[] = [];
+  for (const asset of assets) {
+    let id = slugify(asset.name);
+    if (usedIds.has(id)) id = `${id}_${usedIds.size}`;
+    usedIds.add(id);
+    const { files: assetFiles, frameCount } = await buildAssetFilesServer(asset, id);
+    Object.assign(files, assetFiles);
+    manifest.push({
+      name: asset.name,
+      slug: id,
+      texture: `${id}.OZT`,
+      animation: asset.animation?.name ?? null,
+      frameCount,
+    });
+    files["README_MUONLINE.md"] = strToU8(readme(asset, id, frameCount));
+  }
+  files["Data/Object/Forge3D/manifest.json"] = strToU8(
+    JSON.stringify(
+      { generator: "Forge3D Asset Studio", source: "api", client: "MU Online", assets: manifest },
+      null,
+      2,
+    ),
+  );
   return files;
 }
 
