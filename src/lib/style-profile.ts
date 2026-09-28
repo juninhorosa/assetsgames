@@ -5,7 +5,9 @@ export type StyleKey =
   | "stylized"
   | "pbr-realistic";
 
-export type AssetMode = "sprite" | "spritesheet" | "texture" | "ui" | "model3d";
+export type AssetMode = "sprite" | "spritesheet" | "tileset" | "texture" | "ui" | "model3d";
+
+export type TilesetKind = "terrain" | "autotile" | "walls" | "objects";
 
 /** Sentido/vista travada do projeto — mantém todos os assets no mesmo ângulo. */
 export type ViewKey =
@@ -95,6 +97,10 @@ export interface StyleProfile {
   resolution: number;
   detail: number; // 1..10
   extra: string;
+  /** Grade lógica final para acabamento pixel-art. */
+  pixelGrid?: number;
+  /** Máximo de cores no acabamento pixel-art. */
+  paletteSize?: number;
 }
 
 export const DEFAULT_STYLE_PROFILE: StyleProfile = {
@@ -104,6 +110,8 @@ export const DEFAULT_STYLE_PROFILE: StyleProfile = {
   resolution: 1024,
   detail: 6,
   extra: "",
+  pixelGrid: 64,
+  paletteSize: 24,
 };
 
 export const STYLE_LABELS: Record<StyleKey, string> = {
@@ -135,6 +143,7 @@ const STYLE_PROMPTS: Record<StyleKey, string> = {
 export const MODE_LABELS: Record<AssetMode, string> = {
   sprite: "Sprite / Personagem",
   spritesheet: "Sprite Sheet + Animação",
+  tileset: "Tileset / Mapa",
   texture: "Textura PBR",
   ui: "UI / Ícone",
   model3d: "Modelo 3D (relevo)",
@@ -150,6 +159,10 @@ export interface GenerationParams {
   model3dStyle?: Model3dStyleKey | undefined;
   /** Sobrescreve o sentido travado do projeto (usado na geração multidirecional). */
   view?: ViewKey | undefined;
+  tileSize?: number | undefined;
+  tileColumns?: number | undefined;
+  tileRows?: number | undefined;
+  tilesetKind?: TilesetKind | undefined;
 
 }
 
@@ -244,6 +257,12 @@ export const FRAMING_LOCK =
 export const CROSS_ACTION_SCALE_LOCK =
   "Cross-action scale lock: the character body is drawn at exactly the same size in every frame and in every animation — idle, walk, run, attack, jump, hurt and death all use the identical character height measured from the feet to the top of the head, the same limb thickness and the same head-to-body ratio; never zoom in or enlarge the character for action poses. Raised weapons, swings, jumps and capes extend into the empty margin instead of scaling the figure up or down. Feet always rest on one common ground line at the same height. Every prop and weapon stays rigidly attached to the hand or body it belongs to, never detached, never floating, no loose blade fragments or separated pieces.";
 
+export const PIXEL_RENDER_LOCK =
+  "Pixel rendering lock: draw on a strict low-resolution pixel grid with square pixels only, hard 1-pixel edges, a compact shared palette, no anti-aliasing, no sub-pixel details, no blur, no gradients, no texture noise and no semi-transparent edge pixels. Every repeated feature must use the same pixel clusters and colors.";
+
+export const TILE_GRID_LOCK =
+  "Tile grid lock: every tile occupies exactly one equal square cell, all cell boundaries align perfectly, terrain edges continue seamlessly into compatible neighboring tiles, corners and transitions meet without gaps, no perspective drift, no lighting changes between cells, no labels, separators, padding or gutters.";
+
 
 /**
  * Style profile + mode template = the consistency mechanism.
@@ -279,12 +298,29 @@ export function buildPrompt(
         `Uniform cell size, no gaps, no borders, no numbers, no captions, no onion-skin ghosting, no drop shadow outside the cell.`,
         `Inside every cell the character keeps the same scale and a constant empty safe margin around it (about 7% of the cell), never touching or crossing the cell edges, so all frames trim to the same size.`,
         CROSS_ACTION_SCALE_LOCK,
+        ...(isPixelStyle(profile.style) ? [PIXEL_RENDER_LOCK] : []),
         `Solid flat pure white background so it can be keyed out.`,
 
         styleLine + ".",
         view,
         "Full body, consistent proportions and the exact same facing direction across every frame." +
           extra,
+      ].join(" ");
+    }
+
+    case "tileset": {
+      const cols = params.tileColumns ?? 4;
+      const rows = params.tileRows ?? 4;
+      const tileSize = params.tileSize ?? 32;
+      const kind = params.tilesetKind ?? "terrain";
+      return [
+        `A production-ready ${kind} pixel-art game tileset of: ${userPrompt}.`,
+        `Render exactly ${cols * rows} tiles in a strict ${cols} columns by ${rows} rows grid. Each tile represents a logical ${tileSize}x${tileSize} pixel cell.`,
+        TILE_GRID_LOCK,
+        "Include useful gameplay variants: seamless center fills, straight edges, inner corners, outer corners, transition pieces and small readable variations.",
+        "Strict orthographic top-down game-map view, evenly lit, no characters, no text, no mockup, no border around the full sheet.",
+        PIXEL_RENDER_LOCK,
+        styleLine + "." + extra,
       ].join(" ");
     }
 
