@@ -636,7 +636,7 @@ function Generator() {
   async function applyFrameEdits(next: string[]) {
     setFrames(next);
     try {
-      const sheet = await composeSheetFromDataUrls(next, columns);
+      const sheet = await composeSheetFromDataUrls(next, mode === "tileset" ? tileColumns : columns);
       setImage(sheet.dataUrl);
       setIsFinal(true);
       setRects(sheet.rects);

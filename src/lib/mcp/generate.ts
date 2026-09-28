@@ -52,6 +52,10 @@ export function composePrompt(input: {
   view?: ViewKey | null;
   uiKind?: string | null;
   model3dStyle?: string | null;
+  tileSize?: number;
+  tileColumns?: number;
+  tileRows?: number;
+  tilesetKind?: "terrain" | "autotile" | "walls" | "objects";
 }): string {
   return buildPrompt(input.prompt, input.profile, {
     mode: input.mode,
@@ -60,6 +64,12 @@ export function composePrompt(input: {
       : {}),
     ...(input.uiKind ? { uiKind: input.uiKind } : {}),
     ...(input.model3dStyle ? { model3dStyle: input.model3dStyle as Model3dStyleKey } : {}),
+    ...(input.mode === "tileset" ? {
+      tileSize: input.tileSize,
+      tileColumns: input.tileColumns,
+      tileRows: input.tileRows,
+      tilesetKind: input.tilesetKind,
+    } : {}),
     ...(input.view ? { view: input.view } : {}),
   });
 }

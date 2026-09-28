@@ -225,7 +225,8 @@ export default defineTool({
         pngBytes = finishPixelPng(pngBytes, targetWidth, targetHeight, input.palette_size ?? profile.paletteSize ?? 24);
       }
 
-      const b64 = framed ? bytesToBase64(pngBytes) : raw;
+      const pixelFinished = mode === "tileset" || profile.style === "pixel-art" || profile.style === "tibia-retro";
+      const b64 = framed || pixelFinished ? bytesToBase64(pngBytes) : raw;
 
       const viewLabel = view ? VIEW_LABELS[view] : null;
       const name = [
