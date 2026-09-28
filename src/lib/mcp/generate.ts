@@ -35,8 +35,8 @@ export function resolveProfile(input: {
     resolution: DEFAULT_STYLE_PROFILE.resolution,
     detail: input.detail ?? DEFAULT_STYLE_PROFILE.detail,
     extra: input.extra ?? "",
-    pixelGrid: input.pixelGrid ?? DEFAULT_STYLE_PROFILE.pixelGrid,
-    paletteSize: input.paletteSize ?? DEFAULT_STYLE_PROFILE.paletteSize,
+    pixelGrid: input.pixelGrid ?? DEFAULT_STYLE_PROFILE.pixelGrid ?? 64,
+    paletteSize: input.paletteSize ?? DEFAULT_STYLE_PROFILE.paletteSize ?? 24,
   };
 }
 

@@ -122,7 +122,7 @@ export function PixelFrameEditor({ open, frame, index, onOpenChange, onSave }: P
         <div className="bg-checker flex max-h-[60vh] min-h-72 items-center justify-center overflow-auto rounded-md border border-border p-3">
           <canvas
             ref={canvasRef}
-            className="max-h-[56vh] max-w-full cursor-crosshair border border-primary/30 [image-rendering:pixelated]"
+            className="aspect-square w-full max-w-xl cursor-crosshair border border-primary/30 [image-rendering:pixelated]"
             onPointerDown={(event) => { drawing.current = true; event.currentTarget.setPointerCapture(event.pointerId); paint(event); }}
             onPointerMove={(event) => { if (drawing.current && tool !== "picker") paint(event); }}
             onPointerUp={() => { if (drawing.current) commit(); drawing.current = false; }}

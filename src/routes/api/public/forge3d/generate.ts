@@ -93,7 +93,7 @@ async function generateImage(prompt: string, size: string, key: string): Promise
   const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "openai/gpt-image-2", prompt, size, quality: "low", n: 1 }),
+    body: JSON.stringify({ model: "openai/gpt-image-2.5-sunburst", prompt, size, quality: "low", background: "transparent", n: 1 }),
   });
   if (!res.ok) {
     throw Object.assign(new Error(await res.text().catch(() => "Falha na geração")), {
@@ -210,7 +210,7 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
               bodyHeight = out.bodyHeight;
               finalImage = `data:image/png;base64,${bytesToBase64(out.png)}`;
             }
-            if (b.mode === "tileset" || b.style === "pixel-art" || b.style === "tibia-retro") {
+            if (b.mode === "tileset" || profile.style === "pixel-art" || profile.style === "tibia-retro") {
               const targetWidth = b.mode === "tileset" ? b.tileColumns * b.tileSize : action ? action.columns * b.pixelGrid : b.pixelGrid;
               const targetHeight = b.mode === "tileset" ? b.tileRows * b.tileSize : action ? action.rows * b.pixelGrid : b.pixelGrid;
               const pixelBytes = finishPixelPng(await toPngBytes(finalImage), targetWidth, targetHeight, b.paletteSize);

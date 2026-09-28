@@ -1,7 +1,7 @@
 import { zipSync, strToU8 } from "fflate";
 import { buildAgentGuide, buildManifest } from "./ai-pack";
 import { dataUrlToBytes, type FrameRect, type MapType } from "./image-pipeline";
-import type { AssetMode, StyleProfile } from "./style-profile";
+import { isPixelStyle, type AssetMode, type StyleProfile } from "./style-profile";
 import { resolvePreset, type ExportPreset, type PivotPreset } from "./export-presets";
 
 export type Engine = "unity" | "unreal" | "godot";
@@ -361,7 +361,7 @@ export function buildEngineFiles(
   const files: Record<string, Uint8Array> = {};
 
   const preset = resolvePreset(engine ?? "unity", {
-    pixelArt: asset.style.style === "pixel-art",
+    pixelArt: isPixelStyle(asset.style.style) || asset.mode === "tileset",
     tiling: asset.mode === "texture" || asset.mode === "tileset",
     pivot: options.pivot,
   });
@@ -436,7 +436,7 @@ export function buildEngineFiles(
   // Cada script nasce com o preset da sua própria engine, mesmo no pacote para IA.
   function presetFor(e: Engine): ExportPreset {
     return resolvePreset(e, {
-      pixelArt: asset.style.style === "pixel-art",
+      pixelArt: isPixelStyle(asset.style.style) || asset.mode === "tileset",
       tiling: asset.mode === "texture" || asset.mode === "tileset",
       pivot: options.pivot,
     });
