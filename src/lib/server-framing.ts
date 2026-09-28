@@ -170,6 +170,51 @@ function resample(img: Rgba, src: Bounds, dw: number, dh: number): Rgba {
   return { width: dw, height: dh, data: out };
 }
 
+function resampleNearest(img: Rgba, dw: number, dh: number): Rgba {
+  const out = new Uint8ClampedArray(dw * dh * 4);
+  for (let y = 0; y < dh; y++) {
+    const sy = Math.min(img.height - 1, Math.floor((y * img.height) / dh));
+    for (let x = 0; x < dw; x++) {
+      const sx = Math.min(img.width - 1, Math.floor((x * img.width) / dw));
+      const s = (sy * img.width + sx) * 4;
+      const d = (y * dw + x) * 4;
+      out[d] = img.data[s]!;
+      out[d + 1] = img.data[s + 1]!;
+      out[d + 2] = img.data[s + 2]!;
+      out[d + 3] = img.data[s + 3]!;
+    }
+  }
+  return { width: dw, height: dh, data: out };
+}
+
+function quantize(img: Rgba, paletteSize: number): void {
+  const counts = new Map<string, number>();
+  for (let i = 0; i < img.data.length; i += 4) {
+    if (img.data[i + 3]! < 128) continue;
+    const key = `${img.data[i]! >> 3},${img.data[i + 1]! >> 3},${img.data[i + 2]! >> 3}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const palette = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, Math.max(2, paletteSize)).map(([key]) => key.split(",").map((v) => Number(v) * 8 + 4));
+  for (let i = 0; i < img.data.length; i += 4) {
+    if (img.data[i + 3]! < 128) { img.data[i + 3] = 0; continue; }
+    let best = palette[0] ?? [0, 0, 0];
+    let distance = Number.POSITIVE_INFINITY;
+    for (const swatch of palette) {
+      const d = (img.data[i]! - swatch[0]!) ** 2 + (img.data[i + 1]! - swatch[1]!) ** 2 + (img.data[i + 2]! - swatch[2]!) ** 2;
+      if (d < distance) { distance = d; best = swatch; }
+    }
+    img.data[i] = best[0]!; img.data[i + 1] = best[1]!; img.data[i + 2] = best[2]!; img.data[i + 3] = 255;
+  }
+}
+
+/** Converte uma geração para uma grade pixel-art exata, sem interpolação. */
+export function finishPixelPng(bytes: Uint8Array, width: number, height: number, paletteSize = 24): Uint8Array {
+  const source = toRgba8(decode(bytes));
+  const output = resampleNearest(source, Math.max(1, Math.round(width)), Math.max(1, Math.round(height)));
+  quantize(output, paletteSize);
+  return encode({ width: output.width, height: output.height, data: output.data, channels: 4, depth: 8 });
+}
+
 export interface AssetFramingResult {
   png: Uint8Array;
   /** Lado real da tela usada (px) — pode diferir de opts.canvas no auto-ajuste. */

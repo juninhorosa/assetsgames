@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - The authenticated product uses a persistent navigation rail and a three-zone guided studio because creation, preview, and export must stay visible as one workflow.
+- Pixel-art and tileset outputs use deterministic nearest-neighbor resizing and palette reduction after generation because prompts alone cannot guarantee a clean pixel grid.

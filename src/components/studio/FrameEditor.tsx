@@ -1,6 +1,8 @@
-import { ArrowLeft, ArrowRight, Copy, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, Copy, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { PixelFrameEditor } from "./PixelFrameEditor";
 
 interface FrameEditorProps {
   frames: string[];
@@ -13,6 +15,7 @@ interface FrameEditorProps {
  * Trabalha apenas sobre a lista de data URLs — a sheet é recomposta depois.
  */
 export function FrameEditor({ frames, pixelated, onChange }: FrameEditorProps) {
+  const [editing, setEditing] = useState<number | null>(null);
   function move(index: number, delta: number) {
     const target = index + delta;
     if (target < 0 || target >= frames.length) return;
@@ -49,6 +52,15 @@ export function FrameEditor({ frames, pixelated, onChange }: FrameEditorProps) {
             </span>
           </div>
           <div className="flex items-center justify-between gap-0.5">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-6"
+              aria-label={`Editar pixels do quadro ${index + 1}`}
+              onClick={() => setEditing(index)}
+            >
+              <Pencil className="size-3" />
+            </Button>
             <Button
               size="icon"
               variant="ghost"
@@ -91,6 +103,19 @@ export function FrameEditor({ frames, pixelated, onChange }: FrameEditorProps) {
           </div>
         </figure>
       ))}
+      {editing !== null && frames[editing] && (
+        <PixelFrameEditor
+          open
+          frame={frames[editing]}
+          index={editing}
+          onOpenChange={(open) => { if (!open) setEditing(null); }}
+          onSave={(nextFrame) => {
+            const next = [...frames];
+            next[editing] = nextFrame;
+            onChange(next);
+          }}
+        />
+      )}
     </div>
   );
 }
