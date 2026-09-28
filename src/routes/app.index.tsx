@@ -1066,9 +1066,9 @@ function Generator() {
           <span className="rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[10px] uppercase text-primary">Estilo travado</span>
         </div>
         <Tabs value={mode} onValueChange={(v) => setMode(v as AssetMode)}>
-          <TabsList className="w-full">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 overflow-hidden sm:grid-cols-3 2xl:grid-cols-5">
             {Object.entries(MODE_LABELS).map(([k, label]) => (
-              <TabsTrigger key={k} value={k} className="flex-1 text-xs">
+              <TabsTrigger key={k} value={k} className="min-w-0 whitespace-normal px-2 py-2 text-center text-[11px] leading-tight">
                 {label}
               </TabsTrigger>
             ))}
