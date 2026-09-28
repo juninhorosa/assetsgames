@@ -39,6 +39,10 @@ export default defineTool({
           "With frame=true (default) sprite sheets are normalized server-side: one single scale for every cell, the same body height across all actions, and feet on a common ground line. The reply returns cell, body_height and ground_line in px.",
         targetBodyHeight:
           "Pass target_body_height (e.g. 105) to auto-fit the canvas/cell so the character body lands at that pixel height. Scale stays proportional, so idle/walk/attack keep identical body height and ground line.",
+        pixelFinish:
+          "Pixel-art, Tibia and tileset modes are reduced to a strict logical grid, opaque/transparent edges and a limited shared palette.",
+        tileset:
+          "Use tile_size, tile_columns, tile_rows and tileset_kind. Tiles are returned as one exact grid without gutters.",
 
       },
 

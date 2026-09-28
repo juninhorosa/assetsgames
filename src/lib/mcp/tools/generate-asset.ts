@@ -33,7 +33,7 @@ export default defineTool({
   name: "generate_asset",
   title: "Generate game asset",
   description:
-    "Generate a game asset (sprite, animated sprite sheet, PBR texture, UI icon or 3D-ready relief) and save it to a project. Use direction_set to get the same subject and action from 4 or 8 camera directions. Returns the PNGs plus grid, fps and pivot metadata.",
+    "Generate a game asset (sprite, animated sprite sheet, grid-aligned tileset, PBR texture, UI icon or 3D-ready relief) and save it to a project. Use direction_set to get the same subject and action from 4 or 8 camera directions. Returns the PNGs plus grid, fps and pivot metadata.",
   inputSchema: {
     project_id: z
       .string()
