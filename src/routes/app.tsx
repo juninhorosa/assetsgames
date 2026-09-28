@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Users,
   Wand2,
+  ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -98,61 +99,77 @@ function AppLayout() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <Link to="/" className="flex items-center gap-2">
-          <Boxes className="size-5 text-primary" />
-          <span className="font-mono text-xs tracking-tight">FORGE3D</span>
+    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[224px_minmax(0,1fr)]">
+      <aside className="hidden border-r border-sidebar-border bg-sidebar lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+        <Link to="/" className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5">
+          <span className="neon-shadow flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Boxes className="size-5" />
+          </span>
+          <span>
+            <strong className="block font-display text-sm tracking-[0.08em] text-sidebar-foreground">FORGE3D</strong>
+            <span className="block font-mono text-[9px] uppercase tracking-[0.18em] text-primary">asset studio</span>
+          </span>
         </Link>
 
-        <nav className="flex flex-wrap items-center gap-1">
-          {groups.map((group, gi) => (
-            <div key={group.label} className="flex items-center gap-1">
-              {gi > 0 && <Separator orientation="vertical" className="mx-1 h-5" />}
-              <span
-                className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground lg:inline"
-                aria-hidden="true"
-              >
+        <nav className="flex-1 space-y-5 overflow-y-auto p-3">
+          {groups.map((group) => (
+            <div key={group.label}>
+              <p className="mb-1.5 px-3 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
                 {group.label}
-              </span>
-              {group.items.map((item) => {
-                const active = item.exact
-                  ? pathname === item.to
-                  : pathname.startsWith(item.to);
-                return (
-                  <Button key={item.to} size="sm" variant={active ? "secondary" : "ghost"} asChild>
-                    <Link to={item.to}>
-                      <item.icon className="size-4" />
-                      {item.label}
-                    </Link>
-                  </Button>
-                );
-              })}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+                  return (
+                    <Button key={item.to} variant="ghost" className={`h-10 w-full justify-start px-3 ${active ? "bg-sidebar-accent text-primary" : "text-sidebar-foreground/70"}`} asChild>
+                      <Link to={item.to}>
+                        <item.icon className="size-4" />
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {active && <ChevronRight className="size-3" />}
+                      </Link>
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </nav>
 
-
-        <div className="flex items-center gap-2">
-          <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
-            {session.user.email}
-          </span>
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label="Sair"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/auth" });
-            }}
-          >
-            <LogOut className="size-4" />
+        <div className="border-t border-sidebar-border p-3">
+          <div className="mb-2 truncate px-3 font-mono text-[10px] text-muted-foreground">{session.user.email}</div>
+          <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/70" onClick={async () => {
+            await supabase.auth.signOut();
+            navigate({ to: "/auth" });
+          }}>
+            <LogOut className="size-4" /> Sair
           </Button>
         </div>
-      </header>
+      </aside>
 
-      {/* Required: nested routes render here. */}
-      <Outlet />
+      <div className="min-w-0">
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-xl lg:hidden">
+          <Link to="/" className="flex items-center gap-2">
+            <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground"><Boxes className="size-4" /></span>
+            <span className="font-display text-sm font-bold tracking-[0.08em]">FORGE3D</span>
+          </Link>
+          <div className="flex items-center gap-1">
+            {groups.slice(0, 2).flatMap((group) => group.items).map((item) => {
+              const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+              return (
+                <Button key={item.to} size="icon" variant={active ? "secondary" : "ghost"} aria-label={item.label} asChild>
+                  <Link to={item.to}><item.icon className="size-4" /></Link>
+                </Button>
+              );
+            })}
+            <Button size="icon" variant="ghost" aria-label="Sair" onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/auth" });
+            }}><LogOut className="size-4" /></Button>
+          </div>
+        </header>
+
+        <Outlet />
+      </div>
     </div>
   );
 }

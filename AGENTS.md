@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- The authenticated product uses a persistent navigation rail and a three-zone guided studio because creation, preview, and export must stay visible as one workflow.

@@ -916,10 +916,10 @@ function Generator() {
   }
 
   return (
-    <div className="grid flex-1 gap-px bg-border lg:grid-cols-[320px_1fr_340px]">
+    <div className="grid min-h-[calc(100vh-3.5rem)] min-w-0 grid-cols-[minmax(0,1fr)] flex-1 gap-px overflow-x-hidden bg-border xl:grid-cols-[300px_minmax(420px,1fr)_320px]">
       <h1 className="sr-only">Estúdio de criação de assets</h1>
       {/* ── Projeto & estilo ─────────────────────────────── */}
-      <aside className="space-y-6 bg-background p-4">
+      <aside className="order-2 space-y-6 bg-sidebar p-4 xl:order-1">
         <section className="space-y-3">
           <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
             Projeto
@@ -1056,11 +1056,19 @@ function Generator() {
       </aside>
 
       {/* ── Prompt & preview ─────────────────────────────── */}
-      <main className="space-y-5 bg-background p-4">
+      <main className="studio-grid order-1 space-y-5 bg-background p-4 sm:p-6 xl:order-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">Workspace · criação guiada</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-normal">Crie seu próximo asset</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Defina o tipo, descreva o visual e acompanhe o resultado em tempo real.</p>
+          </div>
+          <span className="rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[10px] uppercase text-primary">Estilo travado</span>
+        </div>
         <Tabs value={mode} onValueChange={(v) => setMode(v as AssetMode)}>
-          <TabsList className="w-full">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 overflow-hidden sm:grid-cols-3 2xl:grid-cols-5">
             {Object.entries(MODE_LABELS).map(([k, label]) => (
-              <TabsTrigger key={k} value={k} className="flex-1 text-xs">
+              <TabsTrigger key={k} value={k} className="min-w-0 whitespace-normal px-2 py-2 text-center text-[11px] leading-tight">
                 {label}
               </TabsTrigger>
             ))}
@@ -1344,7 +1352,7 @@ function Generator() {
 
 
 
-        <div className="bg-checker flex min-h-[360px] items-center justify-center overflow-hidden rounded-md border border-border">
+        <div className="bg-checker neon-shadow relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-lg border border-primary/25">
           {image ? (
             <img
               src={image}
@@ -1355,9 +1363,11 @@ function Generator() {
               style={isPixelStyle(profile.style) ? { imageRendering: "pixelated" } : undefined}
             />
           ) : (
-            <p className="px-6 text-center text-sm text-muted-foreground">
-              O preview aparece aqui e vai se refinando conforme o modelo renderiza.
-            </p>
+            <div className="max-w-xs px-6 text-center">
+              <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary"><Sparkles className="size-6" /></span>
+              <p className="font-display text-base font-medium text-foreground">Sua criação aparece aqui</p>
+              <p className="mt-1 text-sm text-muted-foreground">O resultado ganha detalhes enquanto é renderizado.</p>
+            </div>
           )}
         </div>
 
@@ -1462,7 +1472,7 @@ function Generator() {
       </main>
 
       {/* ── Pós-processamento & exportação ───────────────── */}
-      <aside className="space-y-6 bg-background p-4">
+      <aside className="order-3 space-y-6 bg-sidebar p-4 xl:sticky xl:top-0 xl:h-screen xl:overflow-y-auto">
         <section className="space-y-3">
           <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
             Pós-processamento
