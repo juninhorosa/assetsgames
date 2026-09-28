@@ -196,7 +196,13 @@ function quantize(img: Rgba, paletteSize: number): void {
   }
   const palette = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, Math.max(2, paletteSize)).map(([key]) => key.split(",").map((v) => Number(v) * 8 + 4));
   for (let i = 0; i < img.data.length; i += 4) {
-    if (img.data[i + 3]! < 128) { img.data[i + 3] = 0; continue; }
+    if (img.data[i + 3]! < 128) {
+      img.data[i] = 0;
+      img.data[i + 1] = 0;
+      img.data[i + 2] = 0;
+      img.data[i + 3] = 0;
+      continue;
+    }
     let best = palette[0] ?? [0, 0, 0];
     let distance = Number.POSITIVE_INFINITY;
     for (const swatch of palette) {

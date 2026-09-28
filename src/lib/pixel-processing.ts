@@ -33,6 +33,9 @@ export async function finishPixelArt(source: string, options: PixelFinishOptions
   const palette = paletteFor(pixels.data, options.paletteSize);
   for (let i = 0; i < pixels.data.length; i += 4) {
     if (pixels.data[i + 3]! < 128) {
+      pixels.data[i] = 0;
+      pixels.data[i + 1] = 0;
+      pixels.data[i + 2] = 0;
       pixels.data[i + 3] = 0;
       continue;
     }
