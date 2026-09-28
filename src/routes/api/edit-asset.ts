@@ -15,7 +15,8 @@ export const Route = createFileRoute("/api/edit-asset")({
         if (!form.get("image") || !form.get("prompt")) {
           return new Response("Imagem e prompt são obrigatórios", { status: 400 });
         }
-        form.set("model", "openai/gpt-image-2");
+        form.set("model", "openai/gpt-image-2.5-sunburst");
+        form.set("background", "transparent");
         const streaming = form.get("stream") !== "false";
         if (streaming) {
           form.set("stream", "true");

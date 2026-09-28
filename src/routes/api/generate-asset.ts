@@ -32,11 +32,12 @@ export const Route = createFileRoute("/api/generate-asset")({
           method: "POST",
           headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "openai/gpt-image-2",
+            model: "openai/gpt-image-2.5-sunburst",
             prompt,
             size,
             quality,
             n: 1,
+            background: "transparent",
             ...(stream ? { stream: true, partial_images: 1 } : {}),
           }),
         });

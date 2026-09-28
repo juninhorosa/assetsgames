@@ -744,11 +744,13 @@ function Generator() {
     setBusy("Fatiando sheet");
     try {
       const img = await loadImage(image);
-      const result = sliceSheet(img, columns, rows);
+      const sliceColumns = mode === "tileset" ? tileColumns : columns;
+      const sliceRows = mode === "tileset" ? tileRows : rows;
+      const result = sliceSheet(img, sliceColumns, sliceRows);
       setFrames(result.frames);
       setRects(result.rects);
       setCell({ w: result.cellWidth, h: result.cellHeight });
-      toast.success(`${result.frames.length} quadros extraídos`);
+      toast.success(`${result.frames.length} ${mode === "tileset" ? "tiles" : "quadros"} extraídos`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -918,6 +920,10 @@ function Generator() {
             style: findModel3dStyle(model3dStyle).label,
           }
         : undefined,
+      tileset:
+        mode === "tileset"
+          ? { tileSize, columns: tileColumns, rows: tileRows, kind: tilesetKind }
+          : undefined,
     };
   }
 
