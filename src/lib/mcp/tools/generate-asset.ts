@@ -14,6 +14,7 @@ import {
   bytesToBase64,
   frameAssetPngDetailed,
   frameSpriteSheetPng,
+  finishPixelPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
 import {
@@ -32,7 +33,7 @@ export default defineTool({
   name: "generate_asset",
   title: "Generate game asset",
   description:
-    "Generate a game asset (sprite, animated sprite sheet, PBR texture, UI icon or 3D-ready relief) and save it to a project. Use direction_set to get the same subject and action from 4 or 8 camera directions. Returns the PNGs plus grid, fps and pivot metadata.",
+    "Generate a game asset (sprite, animated sprite sheet, grid-aligned tileset, PBR texture, UI icon or 3D-ready relief) and save it to a project. Use direction_set to get the same subject and action from 4 or 8 camera directions. Returns the PNGs plus grid, fps and pivot metadata.",
   inputSchema: {
     project_id: z
       .string()
@@ -41,7 +42,7 @@ export default defineTool({
       .describe("Project to save into. Null uses the newest project of the user."),
     prompt: z.string().trim().min(3).describe("What to create, e.g. 'stone golem warrior'."),
     mode: z
-      .enum(["sprite", "spritesheet", "texture", "ui", "model3d"])
+      .enum(["sprite", "spritesheet", "tileset", "texture", "ui", "model3d"])
       .nullable()
       .describe("Asset mode, default sprite. Use spritesheet for animation."),
     action: z
@@ -70,6 +71,12 @@ export default defineTool({
       .nullable()
       .describe("3D style variation (model3d mode)."),
     ui_kind: z.string().nullable().describe("UI kind, e.g. icon, button, frame (ui mode)."),
+    tile_size: z.number().int().min(16).max(64).nullable().describe("Logical tile size in pixels. Default 32."),
+    tile_columns: z.number().int().min(3).max(8).nullable().describe("Tileset grid columns. Default 4."),
+    tile_rows: z.number().int().min(3).max(8).nullable().describe("Tileset grid rows. Default 4."),
+    tileset_kind: z.enum(["terrain", "autotile", "walls", "objects"]).nullable().describe("Tileset category."),
+    pixel_grid: z.number().int().min(16).max(256).nullable().describe("Logical pixel-art size per sprite cell. Default 64."),
+    palette_size: z.number().int().min(4).max(64).nullable().describe("Maximum colors after pixel cleanup. Default 24."),
     size: z
       .enum(["1024x1024", "1024x1536", "1536x1024"])
       .nullable()
@@ -146,6 +153,8 @@ export default defineTool({
       palette: (projectProfile?.["palette"] as string | undefined) ?? null,
       detail: (projectProfile?.["detail"] as number | undefined) ?? null,
       extra: (projectProfile?.["extra"] as string | undefined) ?? null,
+      pixelGrid: input.pixel_grid ?? ((projectProfile?.["pixelGrid"] as number | undefined) ?? null),
+      paletteSize: input.palette_size ?? ((projectProfile?.["paletteSize"] as number | undefined) ?? null),
     });
 
     const mode = input.mode ?? "sprite";
@@ -177,6 +186,7 @@ export default defineTool({
         view,
         uiKind: input.ui_kind,
         model3dStyle: input.model3d_style,
+        ...(mode === "tileset" ? { tileSize: input.tile_size ?? 32, tileColumns: input.tile_columns ?? 4, tileRows: input.tile_rows ?? 4, tilesetKind: input.tileset_kind ?? "terrain" } : {}),
       });
       const raw = await generatePngBase64(finalPrompt, size);
       const framed = input.frame !== false && shouldFrameMode(mode);
@@ -205,7 +215,18 @@ export default defineTool({
         frameSize = out.canvas;
       }
 
-      const b64 = framed ? bytesToBase64(pngBytes) : raw;
+      if (mode === "tileset" || profile.style === "pixel-art" || profile.style === "tibia-retro") {
+        const cols = input.tile_columns ?? 4;
+        const rows = input.tile_rows ?? 4;
+        const tile = input.tile_size ?? 32;
+        const logical = input.pixel_grid ?? profile.pixelGrid ?? 64;
+        const targetWidth = mode === "tileset" ? cols * tile : action ? action.columns * logical : logical;
+        const targetHeight = mode === "tileset" ? rows * tile : action ? action.rows * logical : logical;
+        pngBytes = finishPixelPng(pngBytes, targetWidth, targetHeight, input.palette_size ?? profile.paletteSize ?? 24);
+      }
+
+      const pixelFinished = mode === "tileset" || profile.style === "pixel-art" || profile.style === "tibia-retro";
+      const b64 = framed || pixelFinished ? bytesToBase64(pngBytes) : raw;
 
       const viewLabel = view ? VIEW_LABELS[view] : null;
       const name = [
@@ -239,6 +260,7 @@ export default defineTool({
             ...(action ? { animation: action.id, columns: action.columns, rows: action.rows } : {}),
             ...(input.model3d_style ? { model3dStyle: input.model3d_style } : {}),
             ...(input.ui_kind ? { uiKind: input.ui_kind } : {}),
+            ...(mode === "tileset" ? { tileSize: input.tile_size ?? 32, tileColumns: input.tile_columns ?? 4, tileRows: input.tile_rows ?? 4, tilesetKind: input.tileset_kind ?? "terrain" } : {}),
             ...(framed ? { framed: true, frameSize, pivot: "bottom-center" } : {}),
             ...(sheetInfo ? { cellSize: sheetInfo.cell, bodyHeight: sheetInfo.bodyHeight, groundLine: sheetInfo.groundLine } : {}),
 
@@ -285,6 +307,7 @@ export default defineTool({
               read_order: "left-to-right, top-to-bottom",
             }
           : {}),
+        ...(mode === "tileset" ? { grid: { columns: input.tile_columns ?? 4, rows: input.tile_rows ?? 4 }, tile_size: input.tile_size ?? 32, tileset_kind: input.tileset_kind ?? "terrain", read_order: "left-to-right, top-to-bottom" } : {}),
         ...(framed
           ? { framed: true, canvas: { width: frameSize, height: frameSize }, pivot: "bottom-center" }
           : {}),

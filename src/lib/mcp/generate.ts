@@ -25,6 +25,8 @@ export function resolveProfile(input: {
   palette?: string | null;
   detail?: number | null;
   extra?: string | null;
+  pixelGrid?: number | null;
+  paletteSize?: number | null;
 }): StyleProfile {
   return {
     style: (input.style ?? DEFAULT_STYLE_PROFILE.style) as StyleKey,
@@ -33,6 +35,8 @@ export function resolveProfile(input: {
     resolution: DEFAULT_STYLE_PROFILE.resolution,
     detail: input.detail ?? DEFAULT_STYLE_PROFILE.detail,
     extra: input.extra ?? "",
+    pixelGrid: input.pixelGrid ?? DEFAULT_STYLE_PROFILE.pixelGrid ?? 64,
+    paletteSize: input.paletteSize ?? DEFAULT_STYLE_PROFILE.paletteSize ?? 24,
   };
 }
 
@@ -48,6 +52,10 @@ export function composePrompt(input: {
   view?: ViewKey | null;
   uiKind?: string | null;
   model3dStyle?: string | null;
+  tileSize?: number;
+  tileColumns?: number;
+  tileRows?: number;
+  tilesetKind?: "terrain" | "autotile" | "walls" | "objects";
 }): string {
   return buildPrompt(input.prompt, input.profile, {
     mode: input.mode,
@@ -56,6 +64,12 @@ export function composePrompt(input: {
       : {}),
     ...(input.uiKind ? { uiKind: input.uiKind } : {}),
     ...(input.model3dStyle ? { model3dStyle: input.model3dStyle as Model3dStyleKey } : {}),
+    ...(input.mode === "tileset" ? {
+      tileSize: input.tileSize,
+      tileColumns: input.tileColumns,
+      tileRows: input.tileRows,
+      tilesetKind: input.tilesetKind,
+    } : {}),
     ...(input.view ? { view: input.view } : {}),
   });
 }
@@ -71,7 +85,7 @@ export async function generatePngBase64(prompt: string, size: string): Promise<s
   const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${lovableApiKey()}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "openai/gpt-image-2", prompt, size, quality: "low", n: 1 }),
+    body: JSON.stringify({ model: "openai/gpt-image-2.5-sunburst", prompt, size, quality: "low", background: "transparent", n: 1 }),
   });
   if (!res.ok) {
     throw new Error(`Gateway ${res.status}: ${await res.text().catch(() => "falha na geração")}`);

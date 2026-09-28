@@ -1,7 +1,7 @@
 import { zipSync, strToU8 } from "fflate";
 import { buildAgentGuide, buildManifest } from "./ai-pack";
 import { dataUrlToBytes, type FrameRect, type MapType } from "./image-pipeline";
-import type { AssetMode, StyleProfile } from "./style-profile";
+import { isPixelStyle, type AssetMode, type StyleProfile } from "./style-profile";
 import { resolvePreset, type ExportPreset, type PivotPreset } from "./export-presets";
 
 export type Engine = "unity" | "unreal" | "godot";
@@ -31,6 +31,7 @@ export interface AssetExport {
   motion3d?:
     | { fps: number; frameCount: number; depth: number; segments: number; style?: string | undefined }
     | undefined;
+  tileset?: { tileSize: number; columns: number; rows: number; kind: string } | undefined;
 }
 
 function slug(name: string) {
@@ -60,6 +61,7 @@ function metadata(asset: AssetExport, engine: Engine) {
           frames: asset.frameRects ?? [],
         }
       : null,
+    tileset: asset.tileset ?? null,
   };
 }
 
@@ -359,8 +361,8 @@ export function buildEngineFiles(
   const files: Record<string, Uint8Array> = {};
 
   const preset = resolvePreset(engine ?? "unity", {
-    pixelArt: asset.style.style === "pixel-art",
-    tiling: asset.mode === "texture",
+    pixelArt: isPixelStyle(asset.style.style) || asset.mode === "tileset",
+    tiling: asset.mode === "texture" || asset.mode === "tileset",
     pivot: options.pivot,
   });
 
@@ -400,6 +402,16 @@ export function buildEngineFiles(
     );
   }
 
+  if (asset.tileset) {
+    files[`${id}_tileset.png`] = dataUrlToBytes(asset.image);
+    files["tileset.json"] = strToU8(JSON.stringify({
+      image: `${id}_tileset.png`,
+      ...asset.tileset,
+      tileCount: asset.tileset.columns * asset.tileset.rows,
+      readOrder: "left-to-right, top-to-bottom",
+    }, null, 2));
+  }
+
   for (const [path, bytes] of Object.entries(asset.models ?? {})) {
     files[path] = bytes;
   }
@@ -424,8 +436,8 @@ export function buildEngineFiles(
   // Cada script nasce com o preset da sua própria engine, mesmo no pacote para IA.
   function presetFor(e: Engine): ExportPreset {
     return resolvePreset(e, {
-      pixelArt: asset.style.style === "pixel-art",
-      tiling: asset.mode === "texture",
+      pixelArt: isPixelStyle(asset.style.style) || asset.mode === "tileset",
+      tiling: asset.mode === "texture" || asset.mode === "tileset",
       pivot: options.pivot,
     });
   }
