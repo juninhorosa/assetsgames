@@ -916,7 +916,7 @@ function Generator() {
   }
 
   return (
-    <div className="grid min-h-[calc(100vh-3.5rem)] flex-1 gap-px bg-border xl:grid-cols-[300px_minmax(420px,1fr)_320px]">
+    <div className="grid min-h-[calc(100vh-3.5rem)] min-w-0 grid-cols-[minmax(0,1fr)] flex-1 gap-px overflow-x-hidden bg-border xl:grid-cols-[300px_minmax(420px,1fr)_320px]">
       <h1 className="sr-only">Estúdio de criação de assets</h1>
       {/* ── Projeto & estilo ─────────────────────────────── */}
       <aside className="order-2 space-y-6 bg-sidebar p-4 xl:order-1">
