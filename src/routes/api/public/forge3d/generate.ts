@@ -23,6 +23,7 @@ import {
   bytesToBase64,
   frameAssetPngDetailed,
   frameSpriteSheetPng,
+  finishPixelPng,
   shouldFrameMode,
 } from "@/lib/server-framing";
 
@@ -32,7 +33,7 @@ const MAX_JOBS = 8;
 const BodySchema = z.object({
   prompt: z.string().min(3),
   mode: z
-    .enum(["sprite", "spritesheet", "texture", "ui", "model3d"])
+    .enum(["sprite", "spritesheet", "tileset", "texture", "ui", "model3d"])
     .default("sprite"),
   style: z.enum(["pixel-art", "tibia-retro", "low-poly", "stylized", "pbr-realistic"]).nullable().default(null),
   view: z
@@ -59,6 +60,12 @@ const BodySchema = z.object({
   extra: z.string().nullable().default(null),
   size: z.enum(["1024x1024", "1024x1536", "1536x1024"]).default("1024x1024"),
   uiKind: z.string().nullable().default(null),
+  tileSize: z.number().int().min(16).max(64).default(32),
+  tileColumns: z.number().int().min(3).max(8).default(4),
+  tileRows: z.number().int().min(3).max(8).default(4),
+  tilesetKind: z.enum(["terrain", "autotile", "walls", "objects"]).default("terrain"),
+  pixelGrid: z.number().int().min(16).max(256).default(64),
+  paletteSize: z.number().int().min(4).max(64).default(24),
   /** Enquadramento normalizado: fundo removido, escala/pivô fixos, tela quadrada. */
   frame: z.boolean().default(true),
   frameSize: z.number().int().min(64).max(2048).default(512),
@@ -140,6 +147,8 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
           resolution: DEFAULT_STYLE_PROFILE.resolution,
           detail: b.detail ?? DEFAULT_STYLE_PROFILE.detail,
           extra: b.extra ?? "",
+          pixelGrid: b.pixelGrid,
+          paletteSize: b.paletteSize,
         };
 
         const views = findDirectionSet(b.directionSet).views;
@@ -169,6 +178,7 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
               ...(action ? { animation: action.id, columns: action.columns, rows: action.rows } : {}),
               ...(b.uiKind ? { uiKind: b.uiKind } : {}),
               ...(b.model3dStyle ? { model3dStyle: b.model3dStyle as Model3dStyleKey } : {}),
+              ...(b.mode === "tileset" ? { tileSize: b.tileSize, tileColumns: b.tileColumns, tileRows: b.tileRows, tilesetKind: b.tilesetKind } : {}),
               ...(view ? { view } : {}),
             });
             const image = await generateImage(finalPrompt, b.size, key);
@@ -199,6 +209,12 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
               canvasSize = out.canvas;
               bodyHeight = out.bodyHeight;
               finalImage = `data:image/png;base64,${bytesToBase64(out.png)}`;
+            }
+            if (b.mode === "tileset" || b.style === "pixel-art" || b.style === "tibia-retro") {
+              const targetWidth = b.mode === "tileset" ? b.tileColumns * b.tileSize : action ? action.columns * b.pixelGrid : b.pixelGrid;
+              const targetHeight = b.mode === "tileset" ? b.tileRows * b.tileSize : action ? action.rows * b.pixelGrid : b.pixelGrid;
+              const pixelBytes = finishPixelPng(await toPngBytes(finalImage), targetWidth, targetHeight, b.paletteSize);
+              finalImage = `data:image/png;base64,${bytesToBase64(pixelBytes)}`;
             }
             results.push({
               mode: b.mode,
@@ -232,6 +248,7 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
                     readOrder: "left-to-right, top-to-bottom",
                   }
                 : {}),
+              ...(b.mode === "tileset" ? { grid: { columns: b.tileColumns, rows: b.tileRows }, tileSize: b.tileSize, tilesetKind: b.tilesetKind, readOrder: "left-to-right, top-to-bottom" } : {}),
             });
 
           }
