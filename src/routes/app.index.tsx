@@ -73,6 +73,7 @@ import {
   type AssetMode,
   type StyleKey,
   type StyleProfile,
+  type TilesetKind,
   isPixelStyle,
 } from "@/lib/style-profile";
 import {
@@ -107,6 +108,7 @@ import {
   type ReliefOptions,
 } from "@/lib/mesh-3d";
 import { streamEdit, streamGenerate } from "@/lib/stream-image";
+import { finishPixelArt } from "@/lib/pixel-processing";
 import {
   ENGINE_LABELS,
   buildEngineZip,
@@ -154,6 +156,12 @@ export const Route = createFileRoute("/app/")({
 });
 
 const UI_KINDS = ["ícone", "botão", "moldura", "barra de vida", "cursor", "emblema"];
+const TILESET_KINDS: { value: TilesetKind; label: string }[] = [
+  { value: "terrain", label: "Terreno completo" },
+  { value: "autotile", label: "Autotile / transições" },
+  { value: "walls", label: "Paredes e cantos" },
+  { value: "objects", label: "Objetos de mapa" },
+];
 const SIZES = [
   { value: "1024x1024", label: "Quadrado 1024" },
   { value: "1536x1024", label: "Paisagem 1536×1024" },
@@ -234,6 +242,10 @@ function Generator() {
   const [columns, setColumns] = useState(4);
   const [rows, setRows] = useState(2);
   const [uiKind, setUiKind] = useState<string>(UI_KINDS[0]!);
+  const [tileSize, setTileSize] = useState(32);
+  const [tileColumns, setTileColumns] = useState(4);
+  const [tileRows, setTileRows] = useState(4);
+  const [tilesetKind, setTilesetKind] = useState<TilesetKind>("terrain");
   const [size, setSize] = useState<string>(SIZES[0]!.value);
 
   const [image, setImage] = useState<string | null>(null);
@@ -276,8 +288,18 @@ function Generator() {
 
 
 
-  const params = { mode, animation, columns, rows, uiKind, model3dStyle };
-  const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind, model3dStyle]);
+  const params = { mode, animation, columns, rows, uiKind, model3dStyle, tileSize, tileColumns, tileRows, tilesetKind };
+  const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind, model3dStyle, tileSize, tileColumns, tileRows, tilesetKind]);
+
+  async function applyPixelFinish(source: string, targetMode: AssetMode, cols = columns, rws = rows) {
+    if (!isPixelStyle(profile.style) && targetMode !== "tileset") return source;
+    const logical = Math.max(16, profile.pixelGrid ?? 64);
+    return finishPixelArt(source, {
+      width: targetMode === "tileset" ? tileColumns * tileSize : targetMode === "spritesheet" ? cols * logical : logical,
+      height: targetMode === "tileset" ? tileRows * tileSize : targetMode === "spritesheet" ? rws * logical : logical,
+      paletteSize: profile.paletteSize ?? 24,
+    });
+  }
 
   /** Preset de malha coerente com a variação de estilo, mantendo sentido e silhueta. */
   function selectModel3dStyle(id: Model3dStyleKey) {
@@ -359,8 +381,20 @@ function Generator() {
     setImage(null);
     resetDerived();
     try {
-      const out = await runGeneration(finalPrompt, null);
-      if (lockCharacter) setReference(out);
+      const generated = await runGeneration(finalPrompt, null);
+      const out = await applyPixelFinish(generated, mode);
+      setImage(out);
+      setIsFinal(true);
+      if (mode === "spritesheet" || mode === "tileset") {
+        const img = await loadImage(out);
+        const cols = mode === "tileset" ? tileColumns : columns;
+        const rws = mode === "tileset" ? tileRows : rows;
+        const sliced = sliceSheet(img, cols, rws);
+        setFrames(sliced.frames);
+        setRects(sliced.rects);
+        setCell({ w: sliced.cellWidth, h: sliced.cellHeight });
+      }
+      if (lockCharacter && mode !== "tileset") setReference(out);
       if (!name.trim()) setName(prompt.trim().slice(0, 48));
       toast.success("Asset gerado");
     } catch (e) {
@@ -395,7 +429,10 @@ function Generator() {
         setImage(null);
         resetDerived();
 
-        const out = await runGeneration(job.finalPrompt, ref);
+        const generated = await runGeneration(job.finalPrompt, ref);
+        const out = await applyPixelFinish(generated, job.mode, job.columns, job.rows);
+        setImage(out);
+        setIsFinal(true);
         if (!ref && lockCharacter) {
           ref = out;
           setReference(out);
@@ -762,17 +799,17 @@ function Generator() {
         mode,
         prompt,
         finalPrompt,
-        params: { ...params, size },
+          params: { ...params, size },
         image,
         maps,
         frames,
         animation:
-          mode === "spritesheet" && frames.length
+          (mode === "spritesheet" || mode === "tileset") && frames.length
             ? {
-                name: animation,
-                fps,
-                columns,
-                rows,
+                name: mode === "tileset" ? tilesetKind : animation,
+                fps: mode === "tileset" ? 1 : fps,
+                columns: mode === "tileset" ? tileColumns : columns,
+                rows: mode === "tileset" ? tileRows : rows,
                 cellWidth: cell.w,
                 cellHeight: cell.h,
                 rects,
@@ -1121,6 +1158,31 @@ function Generator() {
               </div>
             </>
           )}
+          {mode === "tileset" && (
+            <>
+              <div className="space-y-2">
+                <Label>Conjunto</Label>
+                <Select value={tilesetKind} onValueChange={(value) => setTilesetKind(value as TilesetKind)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TILESET_KINDS.map((kind) => <SelectItem key={kind.value} value={kind.value}>{kind.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tile</Label>
+                <Select value={String(tileSize)} onValueChange={(value) => setTileSize(Number(value))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{[16, 32, 48, 64].map((value) => <SelectItem key={value} value={String(value)}>{value}×{value}px</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Grade {tileColumns}×{tileRows}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={String(tileColumns)} onValueChange={(value) => setTileColumns(Number(value))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{[3, 4, 6, 8].map((value) => <SelectItem key={value} value={String(value)}>{value} col.</SelectItem>)}</SelectContent></Select>
+                  <Select value={String(tileRows)} onValueChange={(value) => setTileRows(Number(value))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{[3, 4, 6, 8].map((value) => <SelectItem key={value} value={String(value)}>{value} lin.</SelectItem>)}</SelectContent></Select>
+                </div>
+              </div>
+            </>
+          )}
           {mode === "ui" && (
             <div className="space-y-2">
               <Label>Tipo de elemento</Label>
@@ -1261,7 +1323,7 @@ function Generator() {
             O mesmo personagem e as mesmas ações vistos de cada direção — estilo, paleta e
             proporções continuam travados pelo Style Profile.
           </p>
-          {mode !== "spritesheet" && (
+          {mode !== "spritesheet" && mode !== "tileset" && (
             <Button
               variant="secondary"
               className="w-full"
@@ -1392,12 +1454,12 @@ function Generator() {
         {frames.length > 0 && (
           <section className="space-y-3">
             <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-              Player de animação — {findAction(animation)?.label ?? animation}
+               {mode === "tileset" ? `Prévia dos tiles — ${tileColumns}×${tileRows}` : `Player de animação — ${findAction(animation)?.label ?? animation}`}
             </h2>
-            <SpritePlayer
+              <SpritePlayer
               frames={frames}
-              initialFps={fps}
-              pixelated={isPixelStyle(profile.style)}
+                initialFps={mode === "tileset" ? 1 : fps}
+                pixelated={isPixelStyle(profile.style) || mode === "tileset"}
             />
           </section>
         )}
@@ -1406,7 +1468,7 @@ function Generator() {
           <section className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-                Editor de quadros — {frames.length} quadros
+               Editor de {mode === "tileset" ? "tiles" : "quadros"} — {frames.length} itens
               </h2>
               {pivot && (
                 <span className="font-mono text-[10px] text-muted-foreground">
@@ -1415,12 +1477,11 @@ function Generator() {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Reordene, duplique ou remova quadros — a sheet é recomposta automaticamente antes de
-              salvar e exportar.
+              Edite pixels, reordene, duplique ou remova itens — a sheet é recomposta automaticamente.
             </p>
             <FrameEditor
               frames={frames}
-              pixelated={isPixelStyle(profile.style)}
+              pixelated={isPixelStyle(profile.style) || mode === "tileset"}
               onChange={applyFrameEdits}
             />
           </section>
@@ -1501,14 +1562,14 @@ function Generator() {
             os assets saem com o mesmo tamanho e margem.
           </p>
 
-          {mode === "spritesheet" && (
+          {(mode === "spritesheet" || mode === "tileset") && (
             <Button
               variant="secondary"
               className="w-full"
               onClick={slice}
               disabled={!image || busy !== null}
             >
-              Fatiar {columns}×{rows} quadros
+              Fatiar {mode === "tileset" ? `${tileColumns}×${tileRows} tiles` : `${columns}×${rows} quadros`}
             </Button>
           )}
           {frames.length > 0 && (
