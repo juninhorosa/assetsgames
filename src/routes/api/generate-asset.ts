@@ -25,6 +25,20 @@ export const Route = createFileRoute("/api/generate-asset")({
         );
         if (blocked) return blocked;
 
+        const providers = await import("@/lib/image-providers.server");
+        const active = await providers.getActiveProvider();
+        if (active.info.id !== "lovable") {
+          try {
+            const b64 = await providers.generateImageB64(prompt, size);
+            return stream
+              ? providers.singleImageSse(b64, "generation")
+              : Response.json({ data: [{ b64_json: b64 }] });
+          } catch (e) {
+            const err = e as Error & { status?: number };
+            return new Response(err.message, { status: err.status ?? 502 });
+          }
+        }
+
         const key = process.env["LOVABLE_API_KEY"];
         if (!key) return new Response("LOVABLE_API_KEY ausente", { status: 500 });
 

@@ -82,25 +82,8 @@ export async function generatePngBase64(prompt: string, size: string): Promise<s
     throw new Error("API/MCP desligada pelo administrador.");
   }
   if (!guard.allowed) throw new Error(guardMessage(guard));
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${lovableApiKey()}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "openai/gpt-image-2.5-sunburst", prompt, size, quality: "low", background: "transparent", n: 1 }),
-  });
-  if (!res.ok) {
-    throw new Error(`Gateway ${res.status}: ${await res.text().catch(() => "falha na geração")}`);
-  }
-  const json = (await res.json()) as { data?: { b64_json?: string; url?: string }[] };
-  const first = json.data?.[0];
-  if (first?.b64_json) return first.b64_json;
-  if (first?.url) {
-    const img = await fetch(first.url);
-    const buf = new Uint8Array(await img.arrayBuffer());
-    let binary = "";
-    for (const byte of buf) binary += String.fromCharCode(byte);
-    return btoa(binary);
-  }
-  throw new Error("Resposta do gateway sem imagem");
+  const { generateImageB64 } = await import("@/lib/image-providers.server");
+  return generateImageB64(prompt, size);
 }
 
 export function base64ToBytes(b64: string): Uint8Array {

@@ -349,6 +349,8 @@ export type Database = {
           ai_enabled: boolean
           daily_credit_cap: number
           id: boolean
+          image_model: string | null
+          image_provider: string
           monthly_credit_cap: number
           public_api_enabled: boolean
           updated_at: string
@@ -358,6 +360,8 @@ export type Database = {
           ai_enabled?: boolean
           daily_credit_cap?: number
           id?: boolean
+          image_model?: string | null
+          image_provider?: string
           monthly_credit_cap?: number
           public_api_enabled?: boolean
           updated_at?: string
@@ -367,6 +371,8 @@ export type Database = {
           ai_enabled?: boolean
           daily_credit_cap?: number
           id?: boolean
+          image_model?: string | null
+          image_provider?: string
           monthly_credit_cap?: number
           public_api_enabled?: boolean
           updated_at?: string
