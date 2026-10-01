@@ -118,8 +118,7 @@ export const Route = createFileRoute("/api/public/forge3d/generate")({
         const guardBlocked = await spendGuardResponse(1, { publicApi: true });
         if (guardBlocked) return guardBlocked;
 
-        const key = process.env["LOVABLE_API_KEY"];
-        if (!key) return new Response("LOVABLE_API_KEY ausente", { status: 500 });
+        const key = process.env["LOVABLE_API_KEY"] ?? "";
 
         const parsed = BodySchema.safeParse(await request.json().catch(() => null));
         if (!parsed.success) {
