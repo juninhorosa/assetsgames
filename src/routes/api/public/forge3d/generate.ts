@@ -89,22 +89,9 @@ async function toPngBytes(image: string): Promise<Uint8Array> {
   return new Uint8Array(await res.arrayBuffer());
 }
 
-async function generateImage(prompt: string, size: string, key: string): Promise<string> {
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "openai/gpt-image-2.5-sunburst", prompt, size, quality: "low", background: "transparent", n: 1 }),
-  });
-  if (!res.ok) {
-    throw Object.assign(new Error(await res.text().catch(() => "Falha na geração")), {
-      status: res.status,
-    });
-  }
-  const json = (await res.json()) as { data?: { b64_json?: string; url?: string }[] };
-  const first = json.data?.[0];
-  if (first?.b64_json) return `data:image/png;base64,${first.b64_json}`;
-  if (first?.url) return first.url;
-  throw new Error("Resposta sem imagem");
+async function generateImage(prompt: string, size: string, _key: string): Promise<string> {
+  const { generateImageB64 } = await import("@/lib/image-providers.server");
+  return `data:image/png;base64,${await generateImageB64(prompt, size)}`;
 }
 
 /**
