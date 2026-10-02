@@ -5,6 +5,7 @@ import { ShieldCheck, Users, Boxes, Activity, ScrollText, Copy, Cpu } from "luci
 import { toast } from "sonner";
 
 import { SpendGuardPanel } from "@/components/admin/SpendGuardPanel";
+import { ImageProviderPanel } from "@/components/admin/ImageProviderPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,6 +169,7 @@ function AdminPage() {
         />
       </section>
 
+      <ImageProviderPanel />
       <SpendGuardPanel />
 
       <section className="panel mb-8 overflow-x-auto p-0">
