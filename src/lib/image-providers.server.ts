@@ -244,6 +244,7 @@ async function runGenerate(info: ProviderInfo, model: string, prompt: string, si
       return urlToB64(url);
     }
   }
+  throw new ProviderError("Provedor desconhecido", 500);
 }
 
 /** Edita uma imagem (image-to-image). Provedores sem edição geram a partir do prompt. */
