@@ -67,22 +67,79 @@ function dims(size: string): { w: number; h: number; ratio: string } {
   return { w: w || 1024, h: h || 1024, ratio: w > h ? "3:2" : w < h ? "2:3" : "1:1" };
 }
 
-export async function getActiveProvider(): Promise<{ info: ProviderInfo; model: string }> {
-  let id: ImageProviderId = "lovable";
-  let model: string | null = null;
+export const AUTO_INFO: ProviderInfo = { id: "auto" as ImageProviderId, label: "Automático", free: true, secret: null, defaultModel: "", supportsEdit: true };
+
+export interface ProviderSettings {
+  mode: string;
+  model: string | null;
+  order: ImageProviderId[];
+  disabled: string[];
+}
+
+export async function getProviderSettings(): Promise<ProviderSettings> {
+  const fallback: ProviderSettings = { mode: "lovable", model: null, order: IMAGE_PROVIDERS.map((p) => p.id), disabled: [] };
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("platform_limits")
-      .select("image_provider,image_model")
+      .select("image_provider,image_model,image_provider_order,image_provider_disabled")
       .maybeSingle();
-    if (data?.image_provider) id = data.image_provider as ImageProviderId;
-    model = data?.image_model ?? null;
+    if (!data) return fallback;
+    const order = (data.image_provider_order ?? []).filter((id: string) => IMAGE_PROVIDERS.some((p) => p.id === id)) as ImageProviderId[];
+    for (const p of IMAGE_PROVIDERS) if (!order.includes(p.id)) order.push(p.id);
+    return { mode: data.image_provider ?? "lovable", model: data.image_model ?? null, order, disabled: data.image_provider_disabled ?? [] };
   } catch {
-    /* padrão */
+    return fallback;
   }
-  const info = IMAGE_PROVIDERS.find((p) => p.id === id) ?? IMAGE_PROVIDERS[0]!;
-  return { info, model: model?.trim() || info.defaultModel };
+}
+
+export function isConfigured(p: ProviderInfo): boolean {
+  return p.secret ? !!process.env[p.secret]?.trim() : true;
+}
+
+/** Provedores que falharam por falta de crédito/limite ficam em pausa por um tempo. */
+const cooldown = new Map<string, { until: number; reason: string }>();
+const COOLDOWN_MS = 10 * 60 * 1000;
+export function providerCooldowns() {
+  const now = Date.now();
+  return [...cooldown.entries()].filter(([, v]) => v.until > now).map(([id, v]) => ({ id, ...v }));
+}
+
+export async function getActiveProvider(): Promise<{ info: ProviderInfo; model: string }> {
+  const s = await getProviderSettings();
+  if (s.mode === "auto") return { info: AUTO_INFO, model: "" };
+  const info = IMAGE_PROVIDERS.find((p) => p.id === s.mode) ?? IMAGE_PROVIDERS[0]!;
+  return { info, model: s.model?.trim() || info.defaultModel };
+}
+
+async function candidates(needEdit: boolean): Promise<{ info: ProviderInfo; model: string }[]> {
+  const s = await getProviderSettings();
+  if (s.mode !== "auto") {
+    const a = await getActiveProvider();
+    return [a];
+  }
+  const now = Date.now();
+  const list = s.order
+    .map((id) => IMAGE_PROVIDERS.find((p) => p.id === id)!)
+    .filter((p) => !s.disabled.includes(p.id) && isConfigured(p) && (cooldown.get(p.id)?.until ?? 0) < now);
+  const sorted = needEdit ? [...list.filter((p) => p.supportsEdit), ...list.filter((p) => !p.supportsEdit)] : list;
+  return sorted.map((info) => ({ info, model: info.defaultModel }));
+}
+
+async function withFallback(needEdit: boolean, run: (c: { info: ProviderInfo; model: string }) => Promise<string>): Promise<string> {
+  const list = await candidates(needEdit);
+  if (!list.length) throw new ProviderError("Nenhum provedor de IA disponível agora (todos sem crédito, sem chave ou desligados).", 503);
+  const errors: string[] = [];
+  for (const c of list) {
+    try {
+      return await run(c);
+    } catch (e) {
+      const err = e as ProviderError;
+      errors.push(`${c.info.label}: ${err.message.slice(0, 160)}`);
+      if (list.length > 1) cooldown.set(c.info.id, { until: Date.now() + COOLDOWN_MS, reason: err.message.slice(0, 160) });
+    }
+  }
+  throw new ProviderError(`Todos os provedores falharam — ${errors.join(" | ")}`, 502);
 }
 
 async function replicateRun(model: string, input: Record<string, unknown>): Promise<string> {
@@ -137,8 +194,11 @@ async function geminiRun(model: string, parts: unknown[]): Promise<string> {
 }
 
 /** Gera uma imagem com o provedor ativo e devolve PNG base64 (sem prefixo). */
-export async function generateImageB64(prompt: string, size = "1024x1024"): Promise<string> {
-  const { info, model } = await getActiveProvider();
+export function generateImageB64(prompt: string, size = "1024x1024"): Promise<string> {
+  return withFallback(false, ({ info, model }) => runGenerate(info, model, prompt, size));
+}
+
+async function runGenerate(info: ProviderInfo, model: string, prompt: string, size: string): Promise<string> {
   const { w, h, ratio } = dims(size);
   switch (info.id) {
     case "lovable":
@@ -187,8 +247,11 @@ export async function generateImageB64(prompt: string, size = "1024x1024"): Prom
 }
 
 /** Edita uma imagem (image-to-image). Provedores sem edição geram a partir do prompt. */
-export async function editImageB64(image: Blob, prompt: string): Promise<string> {
-  const { info, model } = await getActiveProvider();
+export function editImageB64(image: Blob, prompt: string): Promise<string> {
+  return withFallback(true, ({ info, model }) => runEdit(info, model, image, prompt));
+}
+
+async function runEdit(info: ProviderInfo, model: string, image: Blob, prompt: string): Promise<string> {
   const b64 = bytesToB64(new Uint8Array(await image.arrayBuffer()));
   const dataUrl = `data:image/png;base64,${b64}`;
   switch (info.id) {
@@ -218,7 +281,7 @@ export async function editImageB64(image: Blob, prompt: string): Promise<string>
     case "fal":
       return falRun("fal-ai/flux-pro/kontext", { prompt, image_url: dataUrl, output_format: "png", sync_mode: true });
     default:
-      return generateImageB64(prompt);
+      return runGenerate(info, model, prompt, "1024x1024");
   }
 }
 
