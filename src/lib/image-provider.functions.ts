@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const IDS = ["lovable", "openai", "gemini", "replicate", "fal", "huggingface", "pollinations"] as const;
+
 async function assertAdmin(supabase: unknown, userId: string) {
   const { data, error } = await (supabase as {
     rpc: (f: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
@@ -13,16 +15,18 @@ export const getImageProvider = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const { IMAGE_PROVIDERS, getActiveProvider } = await import("./image-providers.server");
-    const active = await getActiveProvider();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin.from("platform_limits").select("image_model").maybeSingle();
+    const m = await import("./image-providers.server");
+    const s = await m.getProviderSettings();
+    const cool = m.providerCooldowns();
     return {
-      active: active.info.id,
-      model: data?.image_model ?? "",
-      providers: IMAGE_PROVIDERS.map((p) => ({
+      active: s.mode,
+      model: s.model ?? "",
+      order: s.order as string[],
+      disabled: s.disabled,
+      providers: m.IMAGE_PROVIDERS.map((p) => ({
         ...p,
-        configured: p.secret ? !!process.env[p.secret]?.trim() : true,
+        configured: m.isConfigured(p),
+        cooldown: cool.find((c) => c.id === p.id)?.reason ?? null,
       })),
     };
   });
@@ -32,8 +36,10 @@ export const setImageProvider = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        provider: z.enum(["lovable", "openai", "gemini", "replicate", "fal", "huggingface", "pollinations"]),
+        provider: z.enum([...IDS, "auto"]),
         model: z.string().max(200),
+        order: z.array(z.enum(IDS)),
+        disabled: z.array(z.enum(IDS)),
       })
       .parse(d),
   )
@@ -42,7 +48,13 @@ export const setImageProvider = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("platform_limits")
-      .update({ image_provider: data.provider, image_model: data.model.trim() || null, updated_at: new Date().toISOString() })
+      .update({
+        image_provider: data.provider,
+        image_model: data.model.trim() || null,
+        image_provider_order: data.order,
+        image_provider_disabled: data.disabled,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", true);
     if (error) throw new Error(error.message);
     return { ok: true };
