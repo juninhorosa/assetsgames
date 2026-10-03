@@ -8,6 +8,13 @@
       "when": 1790871369486,
       "tag": "0000_image_provider_setting",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790994039473,
+      "tag": "0001_image_provider_order",
+      "breakpoints": true
     }
   ]
 }

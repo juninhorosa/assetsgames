@@ -1,0 +1,2 @@
+ALTER TABLE public.platform_limits ADD COLUMN IF NOT EXISTS image_provider_order text[] NOT NULL DEFAULT ARRAY['pollinations','huggingface','gemini','fal','replicate','openai','lovable'];
+ALTER TABLE public.platform_limits ADD COLUMN IF NOT EXISTS image_provider_disabled text[] NOT NULL DEFAULT ARRAY[]::text[];

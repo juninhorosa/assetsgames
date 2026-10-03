@@ -351,6 +351,8 @@ export type Database = {
           id: boolean
           image_model: string | null
           image_provider: string
+          image_provider_disabled: string[]
+          image_provider_order: string[]
           monthly_credit_cap: number
           public_api_enabled: boolean
           updated_at: string
@@ -362,6 +364,8 @@ export type Database = {
           id?: boolean
           image_model?: string | null
           image_provider?: string
+          image_provider_disabled?: string[]
+          image_provider_order?: string[]
           monthly_credit_cap?: number
           public_api_enabled?: boolean
           updated_at?: string
@@ -373,6 +377,8 @@ export type Database = {
           id?: boolean
           image_model?: string | null
           image_provider?: string
+          image_provider_disabled?: string[]
+          image_provider_order?: string[]
           monthly_credit_cap?: number
           public_api_enabled?: boolean
           updated_at?: string
