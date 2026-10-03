@@ -1,0 +1,1 @@
+UPDATE public.platform_limits SET image_provider = 'auto';
