@@ -109,6 +109,7 @@ import {
 } from "@/lib/mesh-3d";
 import { streamEdit, streamGenerate } from "@/lib/stream-image";
 import { finishPixelArt } from "@/lib/pixel-processing";
+import { buildImageRenderPrompt, IMAGE_RENDER_LABELS, type ImageRenderStyle } from "@/lib/image-render";
 import {
   ENGINE_LABELS,
   buildEngineZip,
@@ -226,6 +227,11 @@ function Generator() {
   }, [project?.id]);
 
   const [mode, setMode] = useState<AssetMode>("sprite");
+  const [imageRenderMode, setImageRenderMode] = useState(false);
+  const [imageRenderStyle, setImageRenderStyle] = useState<ImageRenderStyle>("cartoon");
+  const [imageQuantity, setImageQuantity] = useState(1);
+  const [imageResults, setImageResults] = useState<{ id: string; name: string; image: string; prompt: string }[]>([]);
+  const [selectedImagePrompt, setSelectedImagePrompt] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [animation, setAnimation] = useState<string>("walk");
 
@@ -288,8 +294,10 @@ function Generator() {
 
 
 
-  const params = { mode, animation, columns, rows, uiKind, model3dStyle, tileSize, tileColumns, tileRows, tilesetKind };
-  const finalPrompt = useMemo(() => buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind, model3dStyle, tileSize, tileColumns, tileRows, tilesetKind]);
+  const params = { mode, animation, columns, rows, uiKind, model3dStyle, tileSize, tileColumns, tileRows, tilesetKind, ...(imageRenderMode ? { imageRenderStyle, imageQuantity, outputKind: "image-3d-look" } : {}) };
+  const finalPrompt = useMemo(() => imageRenderMode
+    ? selectedImagePrompt ?? buildImageRenderPrompt(prompt, imageRenderStyle, profile)
+    : buildPrompt(prompt, profile, params), [prompt, profile, mode, animation, columns, rows, uiKind, model3dStyle, tileSize, tileColumns, tileRows, tilesetKind, imageRenderMode, imageRenderStyle, selectedImagePrompt]);
 
   async function applyPixelFinish(source: string, targetMode: AssetMode, cols = columns, rws = rows) {
     if (!isPixelStyle(profile.style) && targetMode !== "tileset") return source;
@@ -372,6 +380,10 @@ function Generator() {
   }
 
   async function generate() {
+    if (imageRenderMode) {
+      await generateRenderImages();
+      return;
+    }
     if (!prompt.trim()) {
       toast.error("Descreva o asset que deseja gerar");
       return;
@@ -401,6 +413,51 @@ function Generator() {
       toast.error((e as Error).message);
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function generateRenderImages() {
+    if (!prompt.trim()) { toast.error("Descreva a imagem que deseja gerar"); return; }
+    if (!project) { toast.error("Selecione um projeto primeiro"); return; }
+    if (pendingQueue) { toast.error("Retome ou descarte o lote pendente primeiro"); return; }
+    const total = imageQuantity;
+    const baseName = name.trim() || prompt.trim().slice(0, 48);
+    cancelRef.current = false;
+    setImageResults([]);
+    setSelectedImagePrompt(null);
+    resetDerived();
+    setImage(null);
+    let completed = 0;
+    try {
+      for (let index = 0; index < total; index++) {
+        if (cancelRef.current) break;
+        setBusy(`Gerando imagem ${index + 1}/${total}`);
+        setPackProgress({ done: index, total });
+        setIsFinal(false);
+        const renderPrompt = buildImageRenderPrompt(prompt, imageRenderStyle, profile, index, total);
+        const out = await runGeneration(renderPrompt, null);
+        const resultName = total > 1 ? `${baseName} — ${index + 1}` : baseName;
+        setImage(out);
+        setName(resultName);
+        setSelectedImagePrompt(renderPrompt);
+        setIsFinal(true);
+        const id = await saveAsset({
+          projectId: project.id, name: resultName, mode: "sprite", prompt,
+          finalPrompt: renderPrompt,
+          params: { mode: "sprite", outputKind: "image-3d-look", imageRenderStyle, size, imageQuantity: total, imageIndex: index + 1 },
+          image: out,
+        });
+        setImageResults((results) => [...results, { id, name: resultName, image: out, prompt: renderPrompt }]);
+        completed++;
+        setPackProgress({ done: completed, total });
+        await qc.invalidateQueries({ queryKey: ["assets", project.id] });
+      }
+      toast.success(`${completed}/${total} imagens salvas na biblioteca`);
+    } catch (error) {
+      toast.error(`${(error as Error).message} — ${completed}/${total} imagens salvas`);
+    } finally {
+      setBusy(null);
+      setPackProgress(null);
     }
   }
 
@@ -1108,8 +1165,16 @@ function Generator() {
           </div>
           <span className="rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[10px] uppercase text-primary">Estilo travado</span>
         </div>
-        <Tabs value={mode} onValueChange={(v) => setMode(v as AssetMode)}>
+        <Tabs value={imageRenderMode ? "image-render" : mode} onValueChange={(v) => {
+          if (busy !== null) return;
+          setImageRenderMode(v === "image-render");
+          setMode(v === "image-render" ? "sprite" : v as AssetMode);
+          setImage(null);
+          setIsFinal(false);
+          resetDerived();
+        }}>
           <TabsList className="grid h-auto w-full grid-cols-2 gap-1 overflow-hidden sm:grid-cols-3 2xl:grid-cols-5">
+            <TabsTrigger value="image-render" disabled={busy !== null} className="min-w-0 whitespace-normal px-2 py-2 text-center text-[11px] leading-tight">Imagens 3D</TabsTrigger>
             {Object.entries(MODE_LABELS).map(([k, label]) => (
               <TabsTrigger key={k} value={k} className="min-w-0 whitespace-normal px-2 py-2 text-center text-[11px] leading-tight">
                 {label}
@@ -1130,6 +1195,25 @@ function Generator() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
+          {imageRenderMode && (
+            <>
+              <div className="space-y-2">
+                <Label>Visual da imagem</Label>
+                <Tabs value={imageRenderStyle} onValueChange={(value) => { setImageRenderStyle(value as ImageRenderStyle); setSelectedImagePrompt(null); }}>
+                  <TabsList className="grid h-auto w-full grid-cols-2">
+                    {Object.entries(IMAGE_RENDER_LABELS).map(([value, label]) => <TabsTrigger disabled={busy !== null} key={value} value={value} className="whitespace-normal text-xs">{label}</TabsTrigger>)}
+                  </TabsList>
+                </Tabs>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="image-quantity">Total de imagens</Label>
+                <Select value={String(imageQuantity)} onValueChange={(value) => setImageQuantity(Number(value))} disabled={busy !== null}>
+                  <SelectTrigger id="image-quantity"><SelectValue /></SelectTrigger>
+                  <SelectContent>{Array.from({ length: 20 }, (_, index) => index + 1).map((value) => <SelectItem key={value} value={String(value)}>{value} {value === 1 ? "imagem" : "imagens"}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
           {mode === "spritesheet" && (
             <>
               <div className="space-y-2">
@@ -1225,8 +1309,22 @@ function Generator() {
 
         <Button className="w-full" onClick={generate} disabled={busy !== null}>
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-          {busy ?? "Gerar asset"}
+          {busy ?? (imageRenderMode ? `Gerar ${imageQuantity} ${imageQuantity === 1 ? "imagem" : "imagens"}` : "Gerar asset")}
         </Button>
+        {imageRenderMode && packProgress && <p role="status" className="text-sm text-muted-foreground">{packProgress.done}/{packProgress.total} imagens salvas</p>}
+        {imageRenderMode && imageResults.length > 0 && (
+          <section className="space-y-2" aria-label="Imagens geradas">
+            <h2 className="text-sm font-medium">Imagens geradas · {imageResults.length}</h2>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {imageResults.map((result, index) => (
+                <Button key={result.id} variant="outline" disabled={busy !== null} aria-label={`Selecionar imagem ${index + 1}`} aria-pressed={image === result.image} className="bg-checker h-auto min-w-0 flex-col overflow-hidden p-1" onClick={() => { resetDerived(); setImage(result.image); setName(result.name); setSelectedImagePrompt(result.prompt); setIsFinal(true); }}>
+                  <img src={result.image} alt={result.name} className="aspect-square w-full object-contain" />
+                  <span className="w-full truncate px-1 text-xs">{result.name}</span>
+                </Button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {pendingQueue && busy === null && (
           <section className="flex flex-wrap items-center gap-3 rounded-md border border-primary/40 bg-primary/5 p-3">
