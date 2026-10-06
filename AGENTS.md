@@ -11,3 +11,4 @@
 
 - The authenticated product uses a persistent navigation rail and a three-zone guided studio because creation, preview, and export must stay visible as one workflow.
 - Pixel-art and tileset outputs use deterministic nearest-neighbor resizing and palette reduction after generation because prompts alone cannot guarantee a clean pixel grid.
+- 3D-looking image creation is a Studio presentation mode stored as a sprite with render-style metadata; it reuses existing image providers without implying native 3D geometry.

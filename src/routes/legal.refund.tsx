@@ -15,6 +15,7 @@ export const Route = createFileRoute("/legal/refund")({
         content: "Garantia de reembolso de 30 dias, processada pela Paddle.",
       },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: RefundPage,

@@ -15,6 +15,7 @@ export const Route = createFileRoute("/legal/privacy")({
         content: "Dados recolhidos, finalidades, direitos e partilha com a Paddle.",
       },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: PrivacyPage,
