@@ -15,6 +15,7 @@ export const Route = createFileRoute("/legal/terms")({
         content: "Condições de uso, propriedade intelectual e pagamentos do AssetsForge.",
       },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: TermsPage,
