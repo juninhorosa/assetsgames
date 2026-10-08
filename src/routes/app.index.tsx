@@ -1206,11 +1206,19 @@ function Generator() {
                 </Tabs>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image-quantity">Total de imagens</Label>
-                <Select value={String(imageQuantity)} onValueChange={(value) => setImageQuantity(Number(value))} disabled={busy !== null}>
-                  <SelectTrigger id="image-quantity"><SelectValue /></SelectTrigger>
-                  <SelectContent>{Array.from({ length: 20 }, (_, index) => index + 1).map((value) => <SelectItem key={value} value={String(value)}>{value} {value === 1 ? "imagem" : "imagens"}</SelectItem>)}</SelectContent>
-                </Select>
+                <Label htmlFor="image-quantity">Total de imagens (até 500)</Label>
+                 <Input
+                  id="image-quantity"
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={imageQuantity}
+                  disabled={busy !== null}
+                  onChange={(event) => {
+                    const value = Math.floor(Number(event.target.value) || 1);
+                    setImageQuantity(Math.min(500, Math.max(1, value)));
+                  }}
+                />
               </div>
             </>
           )}
