@@ -74,9 +74,81 @@ async function urlToB64(url: string): Promise<string> {
   return bytesToB64(new Uint8Array(await r.arrayBuffer()));
 }
 
+/**
+ * Dica anexada quando o provedor recusa a credencial: sem isto o usuário lê
+ * apenas "401" e não sabe que precisa corrigir a chave no painel Admin.
+ */
+const KEY_HINTS: Record<string, string> = {
+  Gateway:
+    "a chave LOVABLE_API_KEY do servidor foi recusada — reconfigure-a em Admin › Chaves ou desative este provedor",
+  OpenAI: "a chave OPENAI_API_KEY foi recusada — confira em Admin › Chaves",
+};
+
 async function fail(r: Response, who: string): Promise<never> {
   const t = await r.text().catch(() => "");
-  throw new ProviderError(`${who} ${r.status}: ${t.slice(0, 400)}`, r.status);
+  const hint = (r.status === 401 || r.status === 403) && KEY_HINTS[who] ? ` — ${KEY_HINTS[who]}` : "";
+  throw new ProviderError(`${who} ${r.status}: ${t.slice(0, 300)}${hint}`, r.status);
+}
+
+/**
+ * O Pollinations recebe o prompt na própria URL, então prompts longos (que é o
+ * caso dos prompts de pixel-art/spritesheet) estouram o limite do serviço e
+ * voltam 404. Aqui o texto vira uma frase curta e sem caracteres problemáticos.
+ */
+function pollinationsPrompt(prompt: string): string {
+  const clean = prompt
+    .replace(/[\r\n]+/g, " ")
+    .replace(/[^\p{L}\p{N} ,.\-:/()']/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const MAX = 460;
+  if (clean.length <= MAX) return clean;
+  const cut = clean.slice(0, MAX);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > MAX * 0.6 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
+/**
+ * Pollinations é o caminho grátis do produto, por isso ele não pode depender de
+ * um único modelo: tentamos o modelo configurado, os modelos grátis conhecidos,
+ * a chamada sem `model` (padrão do serviço) e por fim o host de compartilhamento.
+ */
+async function pollinationsRun(model: string, prompt: string, w: number, h: number): Promise<string> {
+  const text = pollinationsPrompt(prompt);
+  const seed = Math.floor(Math.random() * 1e9);
+  const models = [model.trim(), "flux", "turbo", ""].filter((m, i, a) => a.indexOf(m) === i);
+
+  const urls: string[] = [];
+  for (const m of models) {
+    const modelParam = m ? `&model=${encodeURIComponent(m)}` : "";
+    urls.push(
+      `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=${w}&height=${h}${modelParam}&nologo=true&private=true&seed=${seed}`,
+    );
+  }
+  urls.push(
+    `https://pollinations.ai/p/${encodeURIComponent(text)}?width=${w}&height=${h}&nologo=true&seed=${seed}`,
+  );
+
+  const errors: string[] = [];
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { headers: { Accept: "image/*" } });
+      const type = r.headers.get("content-type") ?? "";
+      if (r.ok && type.startsWith("image/")) {
+        const bytes = new Uint8Array(await r.arrayBuffer());
+        if (bytes.length > 1024) return bytesToB64(bytes);
+        errors.push("resposta de imagem vazia");
+        continue;
+      }
+      const detail = (await r.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 120);
+      errors.push(`${r.status}${detail ? ` ${detail}` : ""}`.trim());
+    } catch (e) {
+      errors.push((e as Error).message.slice(0, 80));
+    }
+  }
+  throw new ProviderError(
+    `Pollinations não devolveu imagem (${errors.slice(0, 3).join(" | ")})`,
+  );
 }
 
 function dims(size: string): { w: number; h: number; ratio: string } {
@@ -213,7 +285,11 @@ async function withFallback(needEdit: boolean, run: (c: { info: ProviderInfo; mo
       if (list.length > 1) cooldown.set(c.info.id, { until: Date.now() + COOLDOWN_MS, reason: err.message.slice(0, 160) });
     }
   }
-  throw new ProviderError(`Todos os provedores falharam — ${errors.join(" | ")}`, 502);
+  throw new ProviderError(
+    `Todos os provedores falharam — ${errors.join(" | ")}. ` +
+      "Corrija as chaves em Admin › Chaves (ou use o Pollinations, que é grátis e não precisa de chave).",
+    502,
+  );
 }
 
 async function replicateRun(model: string, input: Record<string, unknown>): Promise<string> {
@@ -268,9 +344,23 @@ async function geminiRun(model: string, parts: unknown[]): Promise<string> {
   return data;
 }
 
-/** Gera uma imagem com o provedor ativo e devolve PNG base64 (sem prefixo). */
-export function generateImageB64(prompt: string, size = "1024x1024"): Promise<string> {
-  return withFallback(false, ({ info, model }) => runGenerate(info, model, prompt, size));
+/**
+ * Gera uma imagem com o provedor ativo e devolve PNG base64 (sem prefixo).
+ * Se todos os provedores configurados falharem, o Pollinations (grátis, sem
+ * chave) ainda é tentado como último recurso — é melhor entregar uma imagem do
+ * que devolver erro só porque as chaves pagas estão erradas/sem crédito.
+ */
+export async function generateImageB64(prompt: string, size = "1024x1024"): Promise<string> {
+  try {
+    return await withFallback(false, ({ info, model }) => runGenerate(info, model, prompt, size));
+  } catch (e) {
+    const { w, h } = dims(size);
+    try {
+      return await pollinationsRun("flux", prompt, w, h);
+    } catch {
+      throw e;
+    }
+  }
 }
 
 async function runGenerate(info: ProviderInfo, model: string, prompt: string, size: string): Promise<string> {
@@ -314,10 +404,8 @@ async function runGenerate(info: ProviderInfo, model: string, prompt: string, si
       if (!r.ok) await fail(r, "Hugging Face");
       return bytesToB64(new Uint8Array(await r.arrayBuffer()));
     }
-    case "pollinations": {
-      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.slice(0, 1800))}?width=${w}&height=${h}&model=${encodeURIComponent(model)}&nologo=true&seed=${Math.floor(Math.random() * 1e9)}`;
-      return urlToB64(url);
-    }
+    case "pollinations":
+      return pollinationsRun(model, prompt, w, h);
   }
   throw new ProviderError("Provedor desconhecido", 500);
 }
