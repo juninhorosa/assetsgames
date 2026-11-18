@@ -6,7 +6,9 @@ export type AuditAction =
   | "api_key.revoke"
   | "api_key.delete"
   | "trial.update"
-  | "credits.update";
+  | "credits.update"
+  | "ai_key.update"
+  | "ai_key.delete";
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "api_key.create": "Criou API key",

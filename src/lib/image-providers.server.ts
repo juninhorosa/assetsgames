@@ -3,6 +3,8 @@
  * Todas as gerações do site (Studio, edição, lote, API pública e MCP) passam por aqui.
  */
 
+import { resolveKey } from "./provider-credentials.server";
+
 export type ImageProviderId =
   | "lovable"
   | "openai"
@@ -37,9 +39,18 @@ export class ProviderError extends Error {
   }
 }
 
-function env(name: string): string {
-  const v = process.env[name]?.trim();
-  if (!v) throw new ProviderError(`Chave ${name} não configurada para este provedor.`, 500);
+/**
+ * Chave do provedor: primeiro a que foi gravada no painel Admin, depois a
+ * variável de ambiente equivalente.
+ */
+async function env(name: string): Promise<string> {
+  const v = await resolveKey(name);
+  if (!v) {
+    throw new ProviderError(
+      `Chave ${name} não configurada — cole a chave do provedor no painel Admin.`,
+      500,
+    );
+  }
   return v;
 }
 
@@ -93,8 +104,9 @@ export async function getProviderSettings(): Promise<ProviderSettings> {
   }
 }
 
-export function isConfigured(p: ProviderInfo): boolean {
-  return p.secret ? !!process.env[p.secret]?.trim() : true;
+export async function isConfigured(p: ProviderInfo): Promise<boolean> {
+  if (!p.secret) return true;
+  return !!(await resolveKey(p.secret));
 }
 
 /** Provedores que falharam por falta de crédito/limite ficam em pausa por um tempo. */
@@ -121,8 +133,12 @@ async function candidates(needEdit: boolean): Promise<{ info: ProviderInfo; mode
   const now = Date.now();
   const list = s.order
     .map((id) => IMAGE_PROVIDERS.find((p) => p.id === id)!)
-    .filter((p) => !s.disabled.includes(p.id) && isConfigured(p) && (cooldown.get(p.id)?.until ?? 0) < now);
-  const sorted = needEdit ? [...list.filter((p) => p.supportsEdit), ...list.filter((p) => !p.supportsEdit)] : list;
+    .filter((p) => !s.disabled.includes(p.id) && (cooldown.get(p.id)?.until ?? 0) < now);
+  const checks = await Promise.all(list.map(async (p) => ({ p, ok: await isConfigured(p) })));
+  const ready = checks.filter((c) => c.ok).map((c) => c.p);
+  const sorted = needEdit
+    ? [...ready.filter((p) => p.supportsEdit), ...ready.filter((p) => !p.supportsEdit)]
+    : ready;
   return sorted.map((info) => ({ info, model: info.defaultModel }));
 }
 
@@ -143,7 +159,7 @@ async function withFallback(needEdit: boolean, run: (c: { info: ProviderInfo; mo
 }
 
 async function replicateRun(model: string, input: Record<string, unknown>): Promise<string> {
-  const token = env("REPLICATE_API_TOKEN");
+  const token = await env("REPLICATE_API_TOKEN");
   const r = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Prefer: "wait" },
@@ -163,9 +179,10 @@ async function replicateRun(model: string, input: Record<string, unknown>): Prom
 }
 
 async function falRun(model: string, input: Record<string, unknown>): Promise<string> {
+  const falKey = await env("FAL_KEY");
   const r = await fetch(`https://fal.run/${model}`, {
     method: "POST",
-    headers: { Authorization: `Key ${env("FAL_KEY")}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Key ${falKey}`, "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   if (!r.ok) await fail(r, "Fal");
