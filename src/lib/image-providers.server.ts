@@ -64,7 +64,13 @@ export function bytesToB64(bytes: Uint8Array): string {
 
 async function urlToB64(url: string): Promise<string> {
   const r = await fetch(url);
-  if (!r.ok) throw new ProviderError(`Falha ao baixar imagem (${r.status})`);
+  if (!r.ok) {
+    const detail = await r.text().catch(() => "");
+    throw new ProviderError(
+      `Falha ao baixar imagem (${r.status})${detail ? `: ${detail.slice(0, 200)}` : ""}`,
+      r.status,
+    );
+  }
   return bytesToB64(new Uint8Array(await r.arrayBuffer()));
 }
 
@@ -104,9 +110,55 @@ export async function getProviderSettings(): Promise<ProviderSettings> {
   }
 }
 
+/**
+ * Uma chave colada errada (ex.: um token de outro serviço na variável do
+ * Lovable) faz o gateway responder 401 "Invalid API key format". Nesses casos o
+ * provedor é tratado como indisponível, em vez de gastar uma tentativa e
+ * esconder a causa real do erro.
+ */
+function keyLooksUsable(secret: string, key: string): boolean {
+  const k = key.trim();
+  if (k.length < 8) return false;
+  switch (secret) {
+    case "LOVABLE_API_KEY":
+      return k.startsWith("sk_");
+    case "OPENAI_API_KEY":
+      return k.startsWith("sk-");
+    case "GEMINI_API_KEY":
+      return k.startsWith("AIza");
+    case "HF_TOKEN":
+      return k.startsWith("hf_");
+    default:
+      return true;
+  }
+}
+
 export async function isConfigured(p: ProviderInfo): Promise<boolean> {
   if (!p.secret) return true;
-  return !!(await resolveKey(p.secret));
+  const key = await resolveKey(p.secret);
+  return !!key && keyLooksUsable(p.secret, key);
+}
+
+/** Motivo legível de cada provedor que não pode ser usado agora. */
+export async function providerIssues(): Promise<string[]> {
+  const s = await getProviderSettings();
+  const now = Date.now();
+  const out: string[] = [];
+  for (const p of s.order.map((id) => IMAGE_PROVIDERS.find((x) => x.id === id)).filter(Boolean) as ProviderInfo[]) {
+    if (s.disabled.includes(p.id)) continue;
+    if (p.secret) {
+      const key = await resolveKey(p.secret);
+      if (!key) out.push(`${p.label}: falta a chave ${p.secret}`);
+      else if (!keyLooksUsable(p.secret, key)) {
+        out.push(
+          `${p.label}: a chave ${p.secret} está num formato inválido (confira no painel Admin › Chaves)`,
+        );
+      }
+    }
+    const cool = cooldown.get(p.id);
+    if (cool && cool.until > now) out.push(`${p.label}: em pausa (${cool.reason})`);
+  }
+  return out;
 }
 
 /** Provedores que falharam por falta de crédito/limite ficam em pausa por um tempo. */
@@ -144,7 +196,13 @@ async function candidates(needEdit: boolean): Promise<{ info: ProviderInfo; mode
 
 async function withFallback(needEdit: boolean, run: (c: { info: ProviderInfo; model: string }) => Promise<string>): Promise<string> {
   const list = await candidates(needEdit);
-  if (!list.length) throw new ProviderError("Nenhum provedor de IA disponível agora (todos sem crédito, sem chave ou desligados).", 503);
+  if (!list.length) {
+    const issues = await providerIssues();
+    throw new ProviderError(
+      `Nenhum provedor de IA disponível agora. ${issues.length ? issues.join(" | ") : "Todos desligados no painel Admin."}`,
+      503,
+    );
+  }
   const errors: string[] = [];
   for (const c of list) {
     try {
