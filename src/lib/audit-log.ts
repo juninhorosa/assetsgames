@@ -17,6 +17,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "api_key.delete": "Excluiu API key",
   "trial.update": "Alterou trial/plano",
   "credits.update": "Alterou créditos",
+  "ai_key.update": "Gravou chave de IA",
+  "ai_key.delete": "Removeu chave de IA",
+  "platform_limits.update": "Alterou limites",
 };
 
 export interface AuditEntry {

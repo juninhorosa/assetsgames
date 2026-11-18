@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { SpendGuardPanel } from "@/components/admin/SpendGuardPanel";
 import { ImageProviderPanel } from "@/components/admin/ImageProviderPanel";
+import { ProviderKeysPanel } from "@/components/admin/ProviderKeysPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,6 +170,7 @@ function AdminPage() {
         />
       </section>
 
+      <ProviderKeysPanel />
       <ImageProviderPanel />
       <SpendGuardPanel />
 
