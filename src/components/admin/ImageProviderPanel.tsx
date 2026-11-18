@@ -49,6 +49,8 @@ export function ImageProviderPanel() {
     setOrder(next);
   };
   const current = mode === "auto" ? null : byId(mode);
+  const ativos = order.filter((id) => !disabled.includes(id));
+  const prontos = ativos.filter((id) => byId(id)?.configured);
 
   return (
     <section className="panel mb-8 p-0">
@@ -58,6 +60,25 @@ export function ImageProviderPanel() {
       </h2>
 
       <div className="space-y-2 p-4">
+        <div
+          className={`rounded-md border px-3 py-2 text-[11px] ${prontos.length ? "border-border text-muted-foreground" : "border-destructive/50 bg-destructive/10 text-destructive"}`}
+        >
+          {prontos.length ? (
+            <>
+              {prontos.length} de {order.length} provedores ativos:{" "}
+              <span className="font-mono">{prontos.map((id) => byId(id)?.label ?? id).join(", ")}</span>
+              . A geração usa o primeiro da lista, na ordem abaixo.
+            </>
+          ) : (
+            <>
+              Nenhum provedor ativo com chave. A geração continua a funcionar no modo grátis
+              (Pollinations, sem chave), mas se quiser usar um provedor pago ligue o switch dele
+              abaixo e cole a chave em <span className="font-mono">Chaves de API para geração</span>.
+              Token de outra ferramenta (ex.: Harbor) não serve para gerar imagens.
+            </>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={() => setMode("auto")}

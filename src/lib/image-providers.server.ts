@@ -217,7 +217,10 @@ export async function providerIssues(): Promise<string[]> {
   const now = Date.now();
   const out: string[] = [];
   for (const p of s.order.map((id) => IMAGE_PROVIDERS.find((x) => x.id === id)).filter(Boolean) as ProviderInfo[]) {
-    if (s.disabled.includes(p.id)) continue;
+    if (s.disabled.includes(p.id)) {
+      out.push(`${p.label}: desligado no painel Admin › Provedores de IA`);
+      continue;
+    }
     if (p.secret) {
       const key = await resolveKey(p.secret);
       if (!key) out.push(`${p.label}: falta a chave ${p.secret}`);
@@ -252,7 +255,10 @@ async function candidates(needEdit: boolean): Promise<{ info: ProviderInfo; mode
   const s = await getProviderSettings();
   if (s.mode !== "auto") {
     const a = await getActiveProvider();
-    return [a];
+    // Provedor fixo desligado ou sem chave válida não pode bloquear a geração:
+    // nesse caso a fila automática assume (e ela já tem rede de segurança).
+    const usable = !s.disabled.includes(a.info.id) && (await isConfigured(a.info));
+    if (usable) return [a];
   }
   const now = Date.now();
   const list = s.order
@@ -266,14 +272,30 @@ async function candidates(needEdit: boolean): Promise<{ info: ProviderInfo; mode
   return sorted.map((info) => ({ info, model: info.defaultModel }));
 }
 
+/** Pollinations é o último recurso: grátis e sem chave. */
+function freeFallback(): { info: ProviderInfo; model: string } {
+  const info = IMAGE_PROVIDERS.find((p) => p.id === "pollinations")!;
+  return { info, model: info.defaultModel };
+}
+
 async function withFallback(needEdit: boolean, run: (c: { info: ProviderInfo; model: string }) => Promise<string>): Promise<string> {
   const list = await candidates(needEdit);
   if (!list.length) {
-    const issues = await providerIssues();
-    throw new ProviderError(
-      `Nenhum provedor de IA disponível agora. ${issues.length ? issues.join(" | ") : "Todos desligados no painel Admin."}`,
-      503,
-    );
+    // Rede de segurança: se nada estiver disponível (sem chave ou tudo
+    // desligado no painel), ainda tentamos o provedor grátis que não precisa
+    // de chave — melhor entregar a imagem do que bloquear o Studio.
+    const fallback = freeFallback();
+    try {
+      return await run(fallback);
+    } catch (e) {
+      const issues = await providerIssues();
+      throw new ProviderError(
+        `Nenhum provedor de IA disponível agora. ${issues.length ? issues.join(" | ") : "Todos desligados no painel Admin."}` +
+          ` — e o provedor grátis (Pollinations) também falhou: ${(e as Error).message.slice(0, 160)}.` +
+          " Ligue um provedor no painel Admin › Provedores de IA ou cole a chave de um deles.",
+        503,
+      );
+    }
   }
   const errors: string[] = [];
   for (const c of list) {

@@ -72,6 +72,8 @@ function KeyRow({ row, onChanged }: { row: ProviderKeyRow; onChanged: () => Prom
   const status =
     row.source === "panel" ? "painel" : row.source === "env" ? "variável de ambiente" : "sem chave";
   const ready = row.source !== "none";
+  /** Chaves guardadas que não pertencem a um provedor de imagem (ex.: Harbor). */
+  const semProvedor = row.providerId === "harbor";
 
   const saveMut = useMutation({
     mutationFn: () => save({ data: { secret: row.secret, apiKey: value.trim() } }),
@@ -100,7 +102,7 @@ function KeyRow({ row, onChanged }: { row: ProviderKeyRow; onChanged: () => Prom
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium">{row.providerLabel}</span>
             <Badge variant={ready ? "secondary" : "outline"}>
-              {ready ? `pronta · ${status}` : "falta chave"}
+              {ready ? `${semProvedor ? "guardada" : "pronta"} · ${status}` : "falta chave"}
             </Badge>
             {row.free && (
               <Badge variant="outline" className="text-[10px]">
@@ -172,6 +174,13 @@ function KeyRow({ row, onChanged }: { row: ProviderKeyRow; onChanged: () => Prom
           </Button>
         )}
       </div>
+
+      {semProvedor && (
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          chave de integração: fica guardada e disponível para o servidor, mas não gera imagens —
+          para gerar, use um dos provedores acima (ou o Pollinations, que é grátis e não pede chave).
+        </p>
+      )}
 
       {row.source === "env" && (
         <p className="mt-1 font-mono text-[10px] text-muted-foreground">
