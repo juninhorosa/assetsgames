@@ -116,14 +116,16 @@ function KeyRow({ row, onChanged }: { row: ProviderKeyRow; onChanged: () => Prom
               : ""}
           </div>
         </div>
-        <a
-          href={row.docsUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 text-[11px] text-primary underline"
-        >
-          obter chave <ExternalLink className="size-3" />
-        </a>
+        {row.docsUrl ? (
+          <a
+            href={row.docsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-primary underline"
+          >
+            obter chave <ExternalLink className="size-3" />
+          </a>
+        ) : null}
       </div>
 
       <div className="mt-2 flex flex-wrap items-end gap-2">

@@ -18,6 +18,7 @@ const SECRETS = [
   "REPLICATE_API_TOKEN",
   "FAL_KEY",
   "HF_TOKEN",
+  "HARBOR_API_KEY",
 ] as const;
 
 type SecretName = (typeof SECRETS)[number];
@@ -53,7 +54,29 @@ const DOCS: Record<SecretName, string> = {
   REPLICATE_API_TOKEN: "https://replicate.com/account/api-tokens",
   FAL_KEY: "https://fal.ai/dashboard/keys",
   HF_TOKEN: "https://huggingface.co/settings/tokens",
+  // Chave de uso interno: sem página de documentação pública para linkar.
+  HARBOR_API_KEY: "",
 };
+
+/**
+ * Chaves que não pertencem a um provedor de imagem, mas devem poder ser
+ * coladas no painel (guardadas no servidor e lidas via `resolveKey`).
+ */
+const EXTRA_KEYS: {
+  secret: SecretName;
+  providerId: string;
+  providerLabel: string;
+  free: boolean;
+  defaultModel: string;
+}[] = [
+  {
+    secret: "HARBOR_API_KEY",
+    providerId: "harbor",
+    providerLabel: "Harbor (token de API)",
+    free: false,
+    defaultModel: "",
+  },
+];
 
 export const listProviderKeys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -63,18 +86,30 @@ export const listProviderKeys = createServerFn({ method: "GET" })
     const creds = await import("./provider-credentials.server");
 
     const known = SECRETS as readonly string[];
-    const withSecret = providers.IMAGE_PROVIDERS.flatMap((p) => {
+    const fromProviders = providers.IMAGE_PROVIDERS.flatMap((p) => {
       const secret = p.secret && known.includes(p.secret) ? (p.secret as SecretName) : null;
-      return secret ? [{ ...p, secret }] : [];
+      return secret
+        ? [
+            {
+              secret,
+              providerId: p.id as string,
+              providerLabel: p.label,
+              free: p.free,
+              defaultModel: p.defaultModel,
+            },
+          ]
+        : [];
     });
+    const covered = fromProviders.map((p) => p.secret);
+    const withSecret = [...fromProviders, ...EXTRA_KEYS.filter((k) => !covered.includes(k.secret))];
     const summaries = await creds.listCredentials(withSecret.map((p) => p.secret));
 
     return withSecret.map((p) => {
       const s = summaries.find((x) => x.secret === p.secret);
       return {
         secret: p.secret,
-        providerId: p.id,
-        providerLabel: p.label,
+        providerId: p.providerId,
+        providerLabel: p.providerLabel,
         free: p.free,
         defaultModel: p.defaultModel,
         docsUrl: DOCS[p.secret],
