@@ -11,6 +11,7 @@ export type ImageProviderId =
   | "gemini"
   | "replicate"
   | "fal"
+  | "tokenharbor"
   | "huggingface"
   | "pollinations";
 
