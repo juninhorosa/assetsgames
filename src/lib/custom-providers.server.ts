@@ -62,34 +62,54 @@ export type CustomProviderRow = CustomProviderConfig & {
   configured: boolean;
 };
 
-interface StoredProvider extends Omit<CustomProviderConfig, "createdAt" | "updatedAt"> {
+interface StoredProvider {
+  id: string;
+  label: string;
+  kind: CustomProviderConfig["kind"];
+  enabled: boolean;
+  base_url: string;
+  endpoint: string;
+  method: CustomProviderConfig["method"];
+  model: string;
+  auth_header: string;
+  auth_prefix: string;
+  prompt_field: string;
+  model_field: string;
+  width_field: string;
+  height_field: string;
+  size_field: string;
+  image_path: string;
+  edit_enabled: boolean;
+  edit_endpoint: string;
+  edit_image_field: string;
   api_key?: string;
   has_key?: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
 
-function publicProvider(row: StoredProvider): CustomProviderRow {
+/** Converte as colunas do Postgres para o contrato consumido pelo gerador. */
+export function customProviderFromRow(row: StoredProvider): CustomProviderRow {
   return {
     id: row.id,
     label: row.label,
     kind: row.kind,
     enabled: row.enabled,
-    baseUrl: row.baseUrl,
+    baseUrl: row.base_url,
     endpoint: row.endpoint,
     method: row.method,
     model: row.model,
-    authHeader: row.authHeader,
-    authPrefix: row.authPrefix,
-    promptField: row.promptField,
-    modelField: row.modelField,
-    widthField: row.widthField,
-    heightField: row.heightField,
-    sizeField: row.sizeField,
-    imagePath: row.imagePath,
-    editEnabled: row.editEnabled,
-    editEndpoint: row.editEndpoint,
-    editImageField: row.editImageField,
+    authHeader: row.auth_header,
+    authPrefix: row.auth_prefix,
+    promptField: row.prompt_field,
+    modelField: row.model_field,
+    widthField: row.width_field,
+    heightField: row.height_field,
+    sizeField: row.size_field,
+    imagePath: row.image_path,
+    editEnabled: row.edit_enabled,
+    editEndpoint: row.edit_endpoint,
+    editImageField: row.edit_image_field,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     maskedKey: row.api_key ? maskKey(row.api_key) : "",
@@ -189,7 +209,7 @@ export async function listCustomProviderConfigs(): Promise<CustomProviderConfig[
   if (error)
     throw new Error(`Não foi possível carregar os provedores personalizados: ${error.message}`);
   return (data as unknown as StoredProvider[]).map((row) => {
-    const { maskedKey: _masked, configured: _configured, ...config } = publicProvider(row);
+    const { maskedKey: _masked, configured: _configured, ...config } = customProviderFromRow(row);
     return config;
   });
 }
@@ -292,7 +312,7 @@ export async function saveCustomProviderRecord(
       .update({ image_provider_order: [...order, customProviderId(id)] })
       .eq("id", true);
   }
-  return publicProvider({ ...(data as unknown as StoredProvider), has_key: true });
+  return customProviderFromRow({ ...(data as unknown as StoredProvider), has_key: true });
 }
 
 export async function deleteCustomProviderRecord(id: string): Promise<void> {

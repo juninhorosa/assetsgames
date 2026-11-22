@@ -1,5 +1,6 @@
 import type { CustomProviderConfig } from "./custom-provider-config";
-import { assertPublicHttpUrl, customProviderSecret } from "./custom-providers.server";
+import { usesJsonEditing } from "./custom-provider-config";
+import { assertPublicHttpUrl } from "./custom-providers.server";
 import { assertPublicImageUrl, publicFetch } from "./custom-provider-network.server";
 
 export class CustomProviderRequestError extends Error {
@@ -85,6 +86,7 @@ export async function runCustomProvider(
   model: string,
   image?: Blob,
 ): Promise<string> {
+  const { customProviderSecret } = await import("./custom-providers.server");
   const key = await customProviderSecret(config.id);
   if (!key) throw new CustomProviderRequestError("Chave de API não configurada.", 500);
   const editing = Boolean(image && config.editEnabled);
@@ -100,7 +102,7 @@ export async function runCustomProvider(
     [config.authHeader]: `${config.authPrefix} ${key}`.trim(),
     Accept: "application/json",
   };
-  if (image && config.kind === "openai" && editing) {
+  if (image && config.kind === "openai" && editing && !usesJsonEditing(config)) {
     const form = new FormData();
     form.append(config.editImageField, image, "asset.png");
     form.append(config.promptField, prompt);

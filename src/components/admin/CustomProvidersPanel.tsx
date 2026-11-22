@@ -37,9 +37,9 @@ export function CustomProvidersPanel() {
         <Plug className="size-3.5" /> Provedores personalizados
       </h2>
       <p className="border-b border-border px-4 py-2 text-[11px] text-muted-foreground">
-        Cadastre TokenHarbor ou qualquer outra API de imagens. Escolha OpenAI compatível para
-        configuração simples ou Avançado para adaptar os campos JSON. As chaves ficam apenas no
-        servidor.
+        Cadastre Runcrate, TokenHarbor ou outra API de imagens. O modo OpenAI compatível usa um
+        modelo que realmente devolve imagens, como FLUX — modelos de texto como DeepSeek, GLM e Qwen
+        não geram sprites. As chaves ficam apenas no servidor.
       </p>
       <div className="space-y-2 p-4">
         {isLoading && <p className="text-xs text-muted-foreground">carregando provedores...</p>}
@@ -148,7 +148,7 @@ function ProviderEditor({
             id="custom-label"
             value={form.label}
             onChange={(e) => set("label", e.target.value)}
-            placeholder="Ex.: TokenHarbor"
+            placeholder="Ex.: Runcrate"
           />
         </Field>
         <Field label="Modelo de imagem" id="custom-model">
@@ -156,7 +156,7 @@ function ProviderEditor({
             id="custom-model"
             value={form.model}
             onChange={(e) => set("model", e.target.value)}
-            placeholder="Ex.: gpt-image-1"
+            placeholder="Ex.: black-forest-labs/FLUX.1-dev"
           />
         </Field>
       </div>
@@ -179,7 +179,7 @@ function ProviderEditor({
               id="custom-base"
               value={form.baseUrl}
               onChange={(e) => set("baseUrl", e.target.value)}
-              placeholder="https://tokenharbor.ai/v1"
+              placeholder="https://api.runcrate.ai/v1"
             />
           </Field>
           <Field label="Caminho de geração" id="custom-endpoint">
@@ -309,6 +309,11 @@ function ProviderEditor({
             />
             <span>Este provedor aceita edição de imagem</span>
           </div>
+          <p className="text-[11px] text-muted-foreground">
+            Para Runcrate, mantenha o endpoint <code>/images/generations</code>. Use um modelo de
+            edição como <code>black-forest-labs/FLUX.1-kontext-dev</code>, não DeepSeek. Os demais
+            modos do Studio usam o mesmo modelo de imagem.
+          </p>
           {form.editEnabled && (
             <div className="grid gap-3 sm:grid-cols-2">
               <Field

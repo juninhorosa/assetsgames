@@ -61,13 +61,13 @@ export function customProviderId(id: string): string {
 
 export function defaultCustomProvider(): CustomProviderInput {
   return {
-    label: "",
+    label: "Runcrate",
     kind: "openai",
     enabled: true,
-    baseUrl: "https://tokenharbor.ai/v1",
+    baseUrl: "https://api.runcrate.ai/v1",
     endpoint: "/images/generations",
     method: "POST",
-    model: "",
+    model: "black-forest-labs/FLUX.1-dev",
     authHeader: "Authorization",
     authPrefix: "Bearer",
     promptField: "prompt",
@@ -78,6 +78,21 @@ export function defaultCustomProvider(): CustomProviderInput {
     imagePath: "data.0.b64_json",
     editEnabled: false,
     editEndpoint: "/images/edits",
-    editImageField: "image",
+    editImageField: "input_image",
   };
+}
+
+/**
+ * Provedores que editam no mesmo endpoint de geração (ex.: Runcrate) recebem
+ * JSON com a imagem em base64. O formato clássico do OpenAI usa multipart em
+ * /images/edits. A regra vem da configuração já salva, sem precisar de coluna
+ * nova no banco.
+ */
+export function usesJsonEditing(config: {
+  editEnabled: boolean;
+  editEndpoint: string;
+  imagePath: string;
+}): boolean {
+  if (!config.editEnabled) return false;
+  return /\/images\/generations\/?$/.test(config.editEndpoint.trim());
 }

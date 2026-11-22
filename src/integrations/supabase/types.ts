@@ -359,7 +359,7 @@ export type Database = {
           edit_enabled: boolean;
           edit_endpoint: string;
           edit_image_field: string;
-          api_key: string;
+          api_key?: string;
           created_at: string;
           updated_at: string;
         };
