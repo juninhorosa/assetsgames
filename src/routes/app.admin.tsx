@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { SpendGuardPanel } from "@/components/admin/SpendGuardPanel";
 import { ImageProviderPanel } from "@/components/admin/ImageProviderPanel";
 import { ProviderKeysPanel } from "@/components/admin/ProviderKeysPanel";
+import { CustomProvidersPanel } from "@/components/admin/CustomProvidersPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AUDIT_ACTION_LABELS,
-  describeAudit,
-  fetchAuditLog,
-  recordAudit,
-} from "@/lib/audit-log";
+import { AUDIT_ACTION_LABELS, describeAudit, fetchAuditLog, recordAudit } from "@/lib/audit-log";
 import { useAuth } from "@/hooks/use-auth.tsx";
 import { formatCredits } from "@/lib/pricing";
 import {
@@ -161,7 +157,11 @@ function AdminPage() {
           hint={dupes.length ? `${dupes.length} grupo(s) com e-mail repetido` : "sem duplicidades"}
         />
         <Stat icon={Activity} label="Trials ativos" value={String(stats.activeTrials)} />
-        <Stat icon={Boxes} label="Projetos / assets" value={`${counts?.projects ?? 0} / ${counts?.assets ?? 0}`} />
+        <Stat
+          icon={Boxes}
+          label="Projetos / assets"
+          value={`${counts?.projects ?? 0} / ${counts?.assets ?? 0}`}
+        />
         <Stat
           icon={Activity}
           label="Créditos (log)"
@@ -171,6 +171,7 @@ function AdminPage() {
       </section>
 
       <ProviderKeysPanel />
+      <CustomProvidersPanel />
       <ImageProviderPanel />
       <SpendGuardPanel />
 
@@ -395,9 +396,7 @@ function AdminPage() {
                     {a.actor_email ?? a.actor_id.slice(0, 8)}
                   </td>
                   <td className="px-4 py-2">
-                    <Badge variant="secondary">
-                      {AUDIT_ACTION_LABELS[a.action] ?? a.action}
-                    </Badge>
+                    <Badge variant="secondary">{AUDIT_ACTION_LABELS[a.action] ?? a.action}</Badge>
                   </td>
                   <td className="px-4 py-2 font-mono text-[11px] text-muted-foreground">
                     {a.target_type ? `${a.target_type}:${(a.target_id ?? "").slice(0, 8)}` : "—"}

@@ -5,15 +5,7 @@
 
 import { resolveKey } from "./provider-credentials.server";
 
-export type ImageProviderId =
-  | "lovable"
-  | "openai"
-  | "gemini"
-  | "replicate"
-  | "fal"
-  | "tokenharbor"
-  | "huggingface"
-  | "pollinations";
+export type ImageProviderId = string;
 
 export interface ProviderInfo {
   id: ImageProviderId;
@@ -22,20 +14,95 @@ export interface ProviderInfo {
   secret: string | null;
   defaultModel: string;
   supportsEdit: boolean;
+  custom?: import("./custom-provider-config").CustomProviderConfig;
 }
 
 export const IMAGE_PROVIDERS: ProviderInfo[] = [
-  { id: "lovable", label: "Lovable AI (padrão)", free: false, secret: "LOVABLE_API_KEY", defaultModel: "openai/gpt-image-2.5-sunburst", supportsEdit: true },
-  { id: "openai", label: "OpenAI (sua chave)", free: false, secret: "OPENAI_API_KEY", defaultModel: "gpt-image-1", supportsEdit: true },
-  { id: "gemini", label: "Google Gemini", free: false, secret: "GEMINI_API_KEY", defaultModel: "gemini-2.5-flash-image", supportsEdit: true },
-  { id: "replicate", label: "Replicate", free: false, secret: "REPLICATE_API_TOKEN", defaultModel: "black-forest-labs/flux-schnell", supportsEdit: true },
-  { id: "fal", label: "Fal.ai", free: false, secret: "FAL_KEY", defaultModel: "fal-ai/flux/schnell", supportsEdit: true },
-  { id: "huggingface", label: "Hugging Face (cota grátis)", free: true, secret: "HF_TOKEN", defaultModel: "black-forest-labs/FLUX.1-schnell", supportsEdit: false },
-  { id: "pollinations", label: "Pollinations (grátis, sem chave)", free: true, secret: null, defaultModel: "flux", supportsEdit: false },
+  {
+    id: "lovable",
+    label: "Lovable AI (padrão)",
+    free: false,
+    secret: "LOVABLE_API_KEY",
+    defaultModel: "openai/gpt-image-2.5-sunburst",
+    supportsEdit: true,
+  },
+  {
+    id: "openai",
+    label: "OpenAI (sua chave)",
+    free: false,
+    secret: "OPENAI_API_KEY",
+    defaultModel: "gpt-image-1",
+    supportsEdit: true,
+  },
+  {
+    id: "gemini",
+    label: "Google Gemini",
+    free: false,
+    secret: "GEMINI_API_KEY",
+    defaultModel: "gemini-2.5-flash-image",
+    supportsEdit: true,
+  },
+  {
+    id: "replicate",
+    label: "Replicate",
+    free: false,
+    secret: "REPLICATE_API_TOKEN",
+    defaultModel: "black-forest-labs/flux-schnell",
+    supportsEdit: true,
+  },
+  {
+    id: "fal",
+    label: "Fal.ai",
+    free: false,
+    secret: "FAL_KEY",
+    defaultModel: "fal-ai/flux/schnell",
+    supportsEdit: true,
+  },
+  {
+    id: "huggingface",
+    label: "Hugging Face (cota grátis)",
+    free: true,
+    secret: "HF_TOKEN",
+    defaultModel: "black-forest-labs/FLUX.1-schnell",
+    supportsEdit: false,
+  },
+  {
+    id: "pollinations",
+    label: "Pollinations (grátis, sem chave)",
+    free: true,
+    secret: null,
+    defaultModel: "flux",
+    supportsEdit: false,
+  },
 ];
 
+export async function allImageProviders(): Promise<ProviderInfo[]> {
+  try {
+    const { listCustomProviders } = await import("./custom-providers.server");
+    const { customProviderId } = await import("./custom-provider-config");
+    const custom = await listCustomProviders();
+    return [
+      ...IMAGE_PROVIDERS,
+      ...custom.map((provider): ProviderInfo => ({
+        id: customProviderId(provider.id),
+        label: provider.label,
+        free: false,
+        secret: null,
+        defaultModel: provider.model,
+        supportsEdit: provider.editEnabled,
+        custom: provider,
+      })),
+    ];
+  } catch {
+    return IMAGE_PROVIDERS;
+  }
+}
+
 export class ProviderError extends Error {
-  constructor(message: string, public status = 502) {
+  constructor(
+    message: string,
+    public status = 502,
+  ) {
     super(message);
   }
 }
@@ -87,7 +154,8 @@ const KEY_HINTS: Record<string, string> = {
 
 async function fail(r: Response, who: string): Promise<never> {
   const t = await r.text().catch(() => "");
-  const hint = (r.status === 401 || r.status === 403) && KEY_HINTS[who] ? ` — ${KEY_HINTS[who]}` : "";
+  const hint =
+    (r.status === 401 || r.status === 403) && KEY_HINTS[who] ? ` — ${KEY_HINTS[who]}` : "";
   throw new ProviderError(`${who} ${r.status}: ${t.slice(0, 300)}${hint}`, r.status);
 }
 
@@ -114,7 +182,12 @@ function pollinationsPrompt(prompt: string): string {
  * um único modelo: tentamos o modelo configurado, os modelos grátis conhecidos,
  * a chamada sem `model` (padrão do serviço) e por fim o host de compartilhamento.
  */
-async function pollinationsRun(model: string, prompt: string, w: number, h: number): Promise<string> {
+async function pollinationsRun(
+  model: string,
+  prompt: string,
+  w: number,
+  h: number,
+): Promise<string> {
   const text = pollinationsPrompt(prompt);
   const seed = Math.floor(Math.random() * 1e9);
   const models = [model.trim(), "flux", "turbo", ""].filter((m, i, a) => a.indexOf(m) === i);
@@ -147,9 +220,7 @@ async function pollinationsRun(model: string, prompt: string, w: number, h: numb
       errors.push((e as Error).message.slice(0, 80));
     }
   }
-  throw new ProviderError(
-    `Pollinations não devolveu imagem (${errors.slice(0, 3).join(" | ")})`,
-  );
+  throw new ProviderError(`Pollinations não devolveu imagem (${errors.slice(0, 3).join(" | ")})`);
 }
 
 function dims(size: string): { w: number; h: number; ratio: string } {
@@ -157,7 +228,14 @@ function dims(size: string): { w: number; h: number; ratio: string } {
   return { w: w || 1024, h: h || 1024, ratio: w > h ? "3:2" : w < h ? "2:3" : "1:1" };
 }
 
-export const AUTO_INFO: ProviderInfo = { id: "auto" as ImageProviderId, label: "Automático", free: true, secret: null, defaultModel: "", supportsEdit: true };
+export const AUTO_INFO: ProviderInfo = {
+  id: "auto" as ImageProviderId,
+  label: "Automático",
+  free: true,
+  secret: null,
+  defaultModel: "",
+  supportsEdit: true,
+};
 
 export interface ProviderSettings {
   mode: string;
@@ -167,7 +245,13 @@ export interface ProviderSettings {
 }
 
 export async function getProviderSettings(): Promise<ProviderSettings> {
-  const fallback: ProviderSettings = { mode: "lovable", model: null, order: IMAGE_PROVIDERS.map((p) => p.id), disabled: [] };
+  const providers = await allImageProviders();
+  const fallback: ProviderSettings = {
+    mode: "lovable",
+    model: null,
+    order: providers.map((p) => p.id),
+    disabled: [],
+  };
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
@@ -175,9 +259,16 @@ export async function getProviderSettings(): Promise<ProviderSettings> {
       .select("image_provider,image_model,image_provider_order,image_provider_disabled")
       .maybeSingle();
     if (!data) return fallback;
-    const order = (data.image_provider_order ?? []).filter((id: string) => IMAGE_PROVIDERS.some((p) => p.id === id)) as ImageProviderId[];
-    for (const p of IMAGE_PROVIDERS) if (!order.includes(p.id)) order.push(p.id);
-    return { mode: data.image_provider ?? "lovable", model: data.image_model ?? null, order, disabled: data.image_provider_disabled ?? [] };
+    const order = (data.image_provider_order ?? []).filter((id: string) =>
+      providers.some((p) => p.id === id),
+    ) as ImageProviderId[];
+    for (const p of providers) if (!order.includes(p.id)) order.push(p.id);
+    return {
+      mode: data.image_provider ?? "lovable",
+      model: data.image_model ?? null,
+      order,
+      disabled: data.image_provider_disabled ?? [],
+    };
   } catch {
     return fallback;
   }
@@ -207,6 +298,7 @@ function keyLooksUsable(secret: string, key: string): boolean {
 }
 
 export async function isConfigured(p: ProviderInfo): Promise<boolean> {
+  if (p.custom) return p.custom.enabled;
   if (!p.secret) return true;
   const key = await resolveKey(p.secret);
   return !!key && keyLooksUsable(p.secret, key);
@@ -215,9 +307,12 @@ export async function isConfigured(p: ProviderInfo): Promise<boolean> {
 /** Motivo legível de cada provedor que não pode ser usado agora. */
 export async function providerIssues(): Promise<string[]> {
   const s = await getProviderSettings();
+  const providers = await allImageProviders();
   const now = Date.now();
   const out: string[] = [];
-  for (const p of s.order.map((id) => IMAGE_PROVIDERS.find((x) => x.id === id)).filter(Boolean) as ProviderInfo[]) {
+  for (const p of s.order
+    .map((id) => providers.find((x) => x.id === id))
+    .filter(Boolean) as ProviderInfo[]) {
     if (s.disabled.includes(p.id)) {
       out.push(`${p.label}: desligado no painel Admin › Provedores de IA`);
       continue;
@@ -248,7 +343,8 @@ export function providerCooldowns() {
 export async function getActiveProvider(): Promise<{ info: ProviderInfo; model: string }> {
   const s = await getProviderSettings();
   if (s.mode === "auto") return { info: AUTO_INFO, model: "" };
-  const info = IMAGE_PROVIDERS.find((p) => p.id === s.mode) ?? IMAGE_PROVIDERS[0]!;
+  const providers = await allImageProviders();
+  const info = providers.find((p) => p.id === s.mode) ?? providers[0]!;
   return { info, model: s.model?.trim() || info.defaultModel };
 }
 
@@ -262,8 +358,10 @@ async function candidates(needEdit: boolean): Promise<{ info: ProviderInfo; mode
     if (usable) return [a];
   }
   const now = Date.now();
+  const providers = await allImageProviders();
   const list = s.order
-    .map((id) => IMAGE_PROVIDERS.find((p) => p.id === id)!)
+    .map((id) => providers.find((p) => p.id === id))
+    .filter((p): p is ProviderInfo => Boolean(p))
     .filter((p) => !s.disabled.includes(p.id) && (cooldown.get(p.id)?.until ?? 0) < now);
   const checks = await Promise.all(list.map(async (p) => ({ p, ok: await isConfigured(p) })));
   const ready = checks.filter((c) => c.ok).map((c) => c.p);
@@ -279,7 +377,10 @@ function freeFallback(): { info: ProviderInfo; model: string } {
   return { info, model: info.defaultModel };
 }
 
-async function withFallback(needEdit: boolean, run: (c: { info: ProviderInfo; model: string }) => Promise<string>): Promise<string> {
+async function withFallback(
+  needEdit: boolean,
+  run: (c: { info: ProviderInfo; model: string }) => Promise<string>,
+): Promise<string> {
   const list = await candidates(needEdit);
   if (!list.length) {
     // Rede de segurança: se nada estiver disponível (sem chave ou tudo
@@ -305,7 +406,11 @@ async function withFallback(needEdit: boolean, run: (c: { info: ProviderInfo; mo
     } catch (e) {
       const err = e as ProviderError;
       errors.push(`${c.info.label}: ${err.message.slice(0, 160)}`);
-      if (list.length > 1) cooldown.set(c.info.id, { until: Date.now() + COOLDOWN_MS, reason: err.message.slice(0, 160) });
+      if (list.length > 1)
+        cooldown.set(c.info.id, {
+          until: Date.now() + COOLDOWN_MS,
+          reason: err.message.slice(0, 160),
+        });
     }
   }
   throw new ProviderError(
@@ -319,17 +424,27 @@ async function replicateRun(model: string, input: Record<string, unknown>): Prom
   const token = await env("REPLICATE_API_TOKEN");
   const r = await fetch(`https://api.replicate.com/v1/models/${model}/predictions`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Prefer: "wait" },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Prefer: "wait",
+    },
     body: JSON.stringify({ input }),
   });
   if (!r.ok) await fail(r, "Replicate");
-  let pred = (await r.json()) as { status: string; output?: unknown; error?: string; urls?: { get: string } };
+  let pred = (await r.json()) as {
+    status: string;
+    output?: unknown;
+    error?: string;
+    urls?: { get: string };
+  };
   while (pred.status === "starting" || pred.status === "processing") {
     await new Promise((res) => setTimeout(res, 1500));
     const p = await fetch(pred.urls!.get, { headers: { Authorization: `Bearer ${token}` } });
     pred = await p.json();
   }
-  if (pred.status !== "succeeded") throw new ProviderError(`Replicate: ${pred.error ?? pred.status}`);
+  if (pred.status !== "succeeded")
+    throw new ProviderError(`Replicate: ${pred.error ?? pred.status}`);
   const out = Array.isArray(pred.output) ? pred.output[0] : pred.output;
   if (typeof out !== "string") throw new ProviderError("Replicate sem imagem");
   return urlToB64(out);
@@ -354,8 +469,14 @@ async function geminiRun(model: string, parts: unknown[]): Promise<string> {
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
       method: "POST",
-      headers: { "x-goog-api-key": env("GEMINI_API_KEY"), "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts }], generationConfig: { responseModalities: ["IMAGE"] } }),
+      headers: {
+        "x-goog-api-key": await env("GEMINI_API_KEY"),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: { responseModalities: ["IMAGE"] },
+      }),
     },
   );
   if (!r.ok) await fail(r, "Gemini");
@@ -386,7 +507,21 @@ export async function generateImageB64(prompt: string, size = "1024x1024"): Prom
   }
 }
 
-async function runGenerate(info: ProviderInfo, model: string, prompt: string, size: string): Promise<string> {
+async function runGenerate(
+  info: ProviderInfo,
+  model: string,
+  prompt: string,
+  size: string,
+): Promise<string> {
+  if (info.custom) {
+    const { runCustomProvider } = await import("./custom-provider-runner.server");
+    try {
+      return await runCustomProvider(info.custom, prompt, size, model);
+    } catch (error) {
+      const e = error as Error & { status?: number };
+      throw new ProviderError(e.message, e.status ?? 502);
+    }
+  }
   const { w, h, ratio } = dims(size);
   switch (info.id) {
     case "lovable":
@@ -402,7 +537,14 @@ async function runGenerate(info: ProviderInfo, model: string, prompt: string, si
             Authorization: `Bearer ${env(isLovable ? "LOVABLE_API_KEY" : "OPENAI_API_KEY")}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ model, prompt, size, quality: "low", background: "transparent", n: 1 }),
+          body: JSON.stringify({
+            model,
+            prompt,
+            size,
+            quality: "low",
+            background: "transparent",
+            n: 1,
+          }),
         },
       );
       if (!r.ok) await fail(r, isLovable ? "Gateway" : "OpenAI");
@@ -413,15 +555,26 @@ async function runGenerate(info: ProviderInfo, model: string, prompt: string, si
       throw new ProviderError("Resposta sem imagem");
     }
     case "gemini":
-      return geminiRun(model, [{ text: `${prompt}\nPlain transparent or flat background, ${ratio} aspect.` }]);
+      return geminiRun(model, [
+        { text: `${prompt}\nPlain transparent or flat background, ${ratio} aspect.` },
+      ]);
     case "replicate":
       return replicateRun(model, { prompt, aspect_ratio: ratio, output_format: "png" });
     case "fal":
-      return falRun(model, { prompt, image_size: { width: w, height: h }, output_format: "png", sync_mode: true });
+      return falRun(model, {
+        prompt,
+        image_size: { width: w, height: h },
+        output_format: "png",
+        sync_mode: true,
+      });
     case "huggingface": {
       const r = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${env("HF_TOKEN")}`, "Content-Type": "application/json", Accept: "image/png" },
+        headers: {
+          Authorization: `Bearer ${env("HF_TOKEN")}`,
+          "Content-Type": "application/json",
+          Accept: "image/png",
+        },
         body: JSON.stringify({ inputs: prompt, parameters: { width: w, height: h } }),
       });
       if (!r.ok) await fail(r, "Hugging Face");
@@ -438,7 +591,22 @@ export function editImageB64(image: Blob, prompt: string): Promise<string> {
   return withFallback(true, ({ info, model }) => runEdit(info, model, image, prompt));
 }
 
-async function runEdit(info: ProviderInfo, model: string, image: Blob, prompt: string): Promise<string> {
+async function runEdit(
+  info: ProviderInfo,
+  model: string,
+  image: Blob,
+  prompt: string,
+): Promise<string> {
+  if (info.custom) {
+    if (!info.custom.editEnabled) return runGenerate(info, model, prompt, "1024x1024");
+    const { runCustomProvider } = await import("./custom-provider-runner.server");
+    try {
+      return await runCustomProvider(info.custom, prompt, "1024x1024", model, image);
+    } catch (error) {
+      const e = error as Error & { status?: number };
+      throw new ProviderError(e.message, e.status ?? 502);
+    }
+  }
   const b64 = bytesToB64(new Uint8Array(await image.arrayBuffer()));
   const dataUrl = `data:image/png;base64,${b64}`;
   switch (info.id) {
@@ -451,8 +619,16 @@ async function runEdit(info: ProviderInfo, model: string, image: Blob, prompt: s
       fd.append("model", model);
       fd.append("background", "transparent");
       const r = await fetch(
-        isLovable ? "https://ai.gateway.lovable.dev/v1/images/edits" : "https://api.openai.com/v1/images/edits",
-        { method: "POST", headers: { Authorization: `Bearer ${env(isLovable ? "LOVABLE_API_KEY" : "OPENAI_API_KEY")}` }, body: fd },
+        isLovable
+          ? "https://ai.gateway.lovable.dev/v1/images/edits"
+          : "https://api.openai.com/v1/images/edits",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${env(isLovable ? "LOVABLE_API_KEY" : "OPENAI_API_KEY")}`,
+          },
+          body: fd,
+        },
       );
       if (!r.ok) await fail(r, isLovable ? "Gateway" : "OpenAI");
       const j = (await r.json()) as { data?: { b64_json?: string; url?: string }[] };
@@ -462,11 +638,23 @@ async function runEdit(info: ProviderInfo, model: string, image: Blob, prompt: s
       throw new ProviderError("Resposta sem imagem");
     }
     case "gemini":
-      return geminiRun(model, [{ text: prompt }, { inlineData: { mimeType: "image/png", data: b64 } }]);
+      return geminiRun(model, [
+        { text: prompt },
+        { inlineData: { mimeType: "image/png", data: b64 } },
+      ]);
     case "replicate":
-      return replicateRun("black-forest-labs/flux-kontext-pro", { prompt, input_image: dataUrl, output_format: "png" });
+      return replicateRun("black-forest-labs/flux-kontext-pro", {
+        prompt,
+        input_image: dataUrl,
+        output_format: "png",
+      });
     case "fal":
-      return falRun("fal-ai/flux-pro/kontext", { prompt, image_url: dataUrl, output_format: "png", sync_mode: true });
+      return falRun("fal-ai/flux-pro/kontext", {
+        prompt,
+        image_url: dataUrl,
+        output_format: "png",
+        sync_mode: true,
+      });
     default:
       return runGenerate(info, model, prompt, "1024x1024");
   }
@@ -476,5 +664,7 @@ async function runEdit(info: ProviderInfo, model: string, image: Blob, prompt: s
 export function singleImageSse(b64: string, kind: "generation" | "edit"): Response {
   const ev = `image_${kind}.completed`;
   const body = `event: ${ev}\ndata: ${JSON.stringify({ type: ev, b64_json: b64 })}\n\n`;
-  return new Response(body, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } });
+  return new Response(body, {
+    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+  });
 }

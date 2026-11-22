@@ -2,12 +2,28 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const IDS = ["lovable", "openai", "gemini", "replicate", "fal", "huggingface", "pollinations"] as const;
+const IDS = [
+  "lovable",
+  "openai",
+  "gemini",
+  "replicate",
+  "fal",
+  "huggingface",
+  "pollinations",
+] as const;
+const PROVIDER_ID = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .regex(/^(?:[a-z][a-z0-9-]*|custom:[0-9a-fA-F-]{36})$/);
 
 async function assertAdmin(supabase: unknown, userId: string) {
-  const { data, error } = await (supabase as {
-    rpc: (f: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
-  }).rpc("has_role", { _user_id: userId, _role: "admin" });
+  const { data, error } = await (
+    supabase as {
+      rpc: (f: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+    }
+  ).rpc("has_role", { _user_id: userId, _role: "admin" });
   if (error || !data) throw new Error("Acesso restrito ao administrador.");
 }
 
@@ -18,16 +34,24 @@ export const getImageProvider = createServerFn({ method: "GET" })
     const m = await import("./image-providers.server");
     const s = await m.getProviderSettings();
     const cool = m.providerCooldowns();
+    const providers = await m.allImageProviders();
     return {
       active: s.mode,
       model: s.model ?? "",
       order: s.order as string[],
       disabled: s.disabled,
-      providers: m.IMAGE_PROVIDERS.map((p) => ({
-        ...p,
-        configured: m.isConfigured(p),
-        cooldown: cool.find((c) => c.id === p.id)?.reason ?? null,
-      })),
+      providers: await Promise.all(
+        providers.map(async (p) => ({
+          id: p.id,
+          label: p.label,
+          free: p.free,
+          secret: p.custom ? null : p.secret,
+          defaultModel: p.defaultModel,
+          supportsEdit: p.supportsEdit,
+          configured: await m.isConfigured(p),
+          cooldown: cool.find((c) => c.id === p.id)?.reason ?? null,
+        })),
+      ),
     };
   });
 
@@ -36,10 +60,10 @@ export const setImageProvider = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        provider: z.enum([...IDS, "auto"]),
+        provider: z.union([z.enum([...IDS, "auto"]), PROVIDER_ID]),
         model: z.string().max(200),
-        order: z.array(z.enum(IDS)),
-        disabled: z.array(z.enum(IDS)),
+        order: z.array(PROVIDER_ID).max(100),
+        disabled: z.array(PROVIDER_ID).max(100),
       })
       .parse(d),
   )

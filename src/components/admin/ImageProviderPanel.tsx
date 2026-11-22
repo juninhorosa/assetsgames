@@ -10,14 +10,18 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { getImageProvider, setImageProvider } from "@/lib/image-provider.functions";
 
-type ProviderId = "lovable" | "openai" | "gemini" | "replicate" | "fal" | "huggingface" | "pollinations";
+type ProviderId = string;
 type Mode = ProviderId | "auto";
 
 export function ImageProviderPanel() {
   const qc = useQueryClient();
   const read = useServerFn(getImageProvider);
   const write = useServerFn(setImageProvider);
-  const { data } = useQuery({ queryKey: ["image-provider"], queryFn: () => read(), refetchInterval: 30000 });
+  const { data } = useQuery({
+    queryKey: ["image-provider"],
+    queryFn: () => read(),
+    refetchInterval: 30000,
+  });
   const [mode, setMode] = useState<Mode>("lovable");
   const [model, setModel] = useState("");
   const [order, setOrder] = useState<ProviderId[]>([]);
@@ -32,7 +36,8 @@ export function ImageProviderPanel() {
   }, [data]);
 
   const save = useMutation({
-    mutationFn: () => write({ data: { provider: mode, model: mode === "auto" ? "" : model, order, disabled } }),
+    mutationFn: () =>
+      write({ data: { provider: mode, model: mode === "auto" ? "" : model, order, disabled } }),
     onSuccess: async () => {
       toast.success("Provedores de IA atualizados");
       await qc.invalidateQueries({ queryKey: ["image-provider"] });
@@ -66,15 +71,18 @@ export function ImageProviderPanel() {
           {prontos.length ? (
             <>
               {prontos.length} de {order.length} provedores ativos:{" "}
-              <span className="font-mono">{prontos.map((id) => byId(id)?.label ?? id).join(", ")}</span>
+              <span className="font-mono">
+                {prontos.map((id) => byId(id)?.label ?? id).join(", ")}
+              </span>
               . A geração usa o primeiro da lista, na ordem abaixo.
             </>
           ) : (
             <>
               Nenhum provedor ativo com chave. A geração continua a funcionar no modo grátis
               (Pollinations, sem chave), mas se quiser usar um provedor pago ligue o switch dele
-              abaixo e cole a chave em <span className="font-mono">Chaves de API para geração</span>.
-              Token de outra ferramenta (ex.: Harbor) não serve para gerar imagens.
+              abaixo e cole a chave em <span className="font-mono">Chaves de API para geração</span>
+              , ou cadastre sua própria API na seção{" "}
+              <span className="font-mono">Provedores personalizados</span>.
             </>
           )}
         </div>
@@ -88,7 +96,8 @@ export function ImageProviderPanel() {
             <Sparkles className="size-3.5" /> Automático (recomendado)
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Usa o primeiro da lista que estiver disponível. Se um ficar sem crédito ou falhar, pula para o próximo e o deixa em pausa por 10 minutos.
+            Usa o primeiro da lista que estiver disponível. Se um ficar sem crédito ou falhar, pula
+            para o próximo e o deixa em pausa por 10 minutos.
           </p>
         </button>
 
@@ -97,7 +106,11 @@ export function ImageProviderPanel() {
             const p = byId(id);
             if (!p) return null;
             const on = !disabled.includes(id);
-            const status = !p.configured ? `falta chave ${p.secret}` : p.cooldown ? `em pausa: ${p.cooldown}` : "pronto";
+            const status = !p.configured
+              ? `falta chave ${p.secret}`
+              : p.cooldown
+                ? `em pausa: ${p.cooldown}`
+                : "pronto";
             return (
               <li
                 key={id}
@@ -111,15 +124,29 @@ export function ImageProviderPanel() {
                     {!p.supportsEdit && " · sem edição"}
                   </div>
                 </div>
-                <Button size="icon" variant="ghost" className="size-7" onClick={() => move(i, -1)} aria-label="Subir">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-7"
+                  onClick={() => move(i, -1)}
+                  aria-label="Subir"
+                >
                   <ArrowUp className="size-3.5" />
                 </Button>
-                <Button size="icon" variant="ghost" className="size-7" onClick={() => move(i, 1)} aria-label="Descer">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-7"
+                  onClick={() => move(i, 1)}
+                  aria-label="Descer"
+                >
                   <ArrowDown className="size-3.5" />
                 </Button>
                 <Switch
                   checked={on}
-                  onCheckedChange={(v) => setDisabled(v ? disabled.filter((d) => d !== id) : [...disabled, id])}
+                  onCheckedChange={(v) =>
+                    setDisabled(v ? disabled.filter((d) => d !== id) : [...disabled, id])
+                  }
                   aria-label={`Ativar ${p.label}`}
                 />
                 <Button
@@ -139,11 +166,23 @@ export function ImageProviderPanel() {
       <div className="flex flex-wrap items-end gap-3 border-t border-border px-4 py-3">
         {current && (
           <div className="min-w-0 flex-1">
-            <Label htmlFor="img-model" className="text-xs">Modelo (opcional)</Label>
-            <Input id="img-model" value={model} placeholder={current.defaultModel} onChange={(e) => setModel(e.target.value)} />
+            <Label htmlFor="img-model" className="text-xs">
+              Modelo (opcional)
+            </Label>
+            <Input
+              id="img-model"
+              value={model}
+              placeholder={current.defaultModel}
+              onChange={(e) => setModel(e.target.value)}
+            />
           </div>
         )}
-        <Button size="sm" className="ml-auto" onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button
+          size="sm"
+          className="ml-auto"
+          onClick={() => save.mutate()}
+          disabled={save.isPending}
+        >
           {save.isPending ? "salvando…" : "Salvar"}
         </Button>
       </div>
