@@ -10,6 +10,7 @@ import {
 } from "./custom-provider-config";
 import { maskKey } from "./provider-credentials.server";
 import { isPrivateAddress } from "./custom-provider-network.server";
+import { imageModelError } from "./image-model-check";
 
 const FIELD = /^[A-Za-z_][A-Za-z0-9_.-]{0,79}$/;
 const PATH = /^[A-Za-z_][A-Za-z0-9_-]*(?:\.(?:[A-Za-z_][A-Za-z0-9_-]*|\d+)){0,7}$/;
@@ -172,6 +173,8 @@ export function validateCustomProvider(
   }
   if (clean.kind === "advanced" && !clean.modelField && !clean.promptField)
     throw new Error("Informe o campo do prompt.");
+  const modelProblem = imageModelError(clean as CustomProviderConfig);
+  if (modelProblem) throw new Error(modelProblem);
   return {
     ...clean,
     ...(clean.id ? { id: clean.id } : {}),

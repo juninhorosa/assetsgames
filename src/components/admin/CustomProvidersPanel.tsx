@@ -157,7 +157,16 @@ function ProviderEditor({
             value={form.model}
             onChange={(e) => set("model", e.target.value)}
             placeholder="Ex.: black-forest-labs/FLUX.1-dev"
+            list="custom-image-models"
           />
+          <datalist id="custom-image-models">
+            <option value="black-forest-labs/FLUX.1-dev" />
+            <option value="black-forest-labs/FLUX.1-schnell" />
+            <option value="black-forest-labs/FLUX.1-kontext-dev" />
+            <option value="stabilityai/stable-diffusion-3-5-large" />
+            <option value="ideogram/ideogram-3.0" />
+            <option value="openai/gpt-image-2" />
+          </datalist>
         </Field>
       </div>
       <Tabs

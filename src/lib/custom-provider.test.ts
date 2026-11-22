@@ -7,6 +7,7 @@ import {
 import { defaultCustomProvider } from "../lib/custom-provider-config.ts";
 import { customProviderFromRow } from "./custom-providers.server.ts";
 import { runCustomProvider } from "./custom-provider-runner.server.ts";
+import { modelLooksLikeImageModel, imageModelError } from "./image-model-check.ts";
 
 const base = {
   ...defaultCustomProvider(),
@@ -157,6 +158,22 @@ test("aceita imagem PNG direta no modo avançado", async (t) => {
     endpoint: "https://api.runcrate.ai/v1/images/generations",
   };
   assert.equal(await runCustomProvider(config, "tileset", "1024x1024", config.model), "iVBORw==");
+});
+
+test("recusa modelo de texto antes de chamar a API", () => {
+  assert.equal(modelLooksLikeImageModel("deepseek-ai/DeepSeek-V4.1-Flash"), false);
+  assert.equal(modelLooksLikeImageModel("zai-org/GLM-5.3"), false);
+  assert.equal(modelLooksLikeImageModel("Qwen/Qwen3.8-Flash"), false);
+  assert.equal(modelLooksLikeImageModel("black-forest-labs/FLUX.1-dev"), true);
+  assert.equal(modelLooksLikeImageModel("black-forest-labs/FLUX.1-schnell"), true);
+  assert.equal(modelLooksLikeImageModel("stabilityai/stable-diffusion-3-5-large"), true);
+  assert.equal(modelLooksLikeImageModel("ideogram/ideogram-3.0"), true);
+  const problem = imageModelError({
+    ...base,
+    model: "deepseek-ai/DeepSeek-V4.1-Flash",
+  });
+  assert.match(problem ?? "", /não gera imagens/);
+  assert.equal(imageModelError({ ...base, model: "black-forest-labs/FLUX.1-dev" }), null);
 });
 
 test("resposta sem imagem falha claramente", () => {

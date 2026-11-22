@@ -1,5 +1,6 @@
 import type { CustomProviderConfig } from "./custom-provider-config";
 import { usesJsonEditing } from "./custom-provider-config";
+import { imageModelError } from "./image-model-check";
 import { assertPublicHttpUrl } from "./custom-providers.server";
 import { assertPublicImageUrl, publicFetch } from "./custom-provider-network.server";
 
@@ -87,6 +88,8 @@ export async function runCustomProvider(
   image?: Blob,
 ): Promise<string> {
   const { customProviderSecret } = await import("./custom-providers.server");
+  const modelProblem = imageModelError(config);
+  if (modelProblem && !image) throw new CustomProviderRequestError(modelProblem, 400);
   const key = await customProviderSecret(config.id);
   if (!key) throw new CustomProviderRequestError("Chave de API não configurada.", 500);
   const editing = Boolean(image && config.editEnabled);
