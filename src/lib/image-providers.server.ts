@@ -4,6 +4,7 @@
  */
 
 import { resolveKey } from "./provider-credentials.server";
+import { pickFreeFallback } from "./provider-fallback";
 
 export type ImageProviderId = string;
 
@@ -371,10 +372,26 @@ async function candidates(needEdit: boolean): Promise<{ info: ProviderInfo; mode
   return sorted.map((info) => ({ info, model: info.defaultModel }));
 }
 
-/** Pollinations é o último recurso: grátis e sem chave. */
-function freeFallback(): { info: ProviderInfo; model: string } {
-  const info = IMAGE_PROVIDERS.find((p) => p.id === "pollinations")!;
-  return { info, model: info.defaultModel };
+/**
+ * Pollinations é o último recurso: grátis e sem chave. Se o administrador
+ * desligou esse provedor, ele não pode ser usado nem como emergência — devolve
+ * null e a geração termina com erro explicando o motivo.
+ */
+async function freeFallback(): Promise<{ info: ProviderInfo; model: string } | null> {
+  const settings = await getProviderSettings();
+  const providers = await allImageProviders();
+  const chosen = pickFreeFallback(
+    {
+      providers: providers.map((provider) => ({ id: provider.id })),
+      disabled: settings.disabled,
+      cooldowns: Object.fromEntries(
+        [...cooldown.entries()].map(([id, value]) => [id, value.until]),
+      ),
+    },
+    (id) => providers.find((provider) => provider.id === id),
+  );
+  if (!chosen) return null;
+  return { info: chosen, model: chosen.defaultModel };
 }
 
 async function withFallback(
@@ -383,17 +400,23 @@ async function withFallback(
 ): Promise<string> {
   const list = await candidates(needEdit);
   if (!list.length) {
-    // Rede de segurança: se nada estiver disponível (sem chave ou tudo
-    // desligado no painel), ainda tentamos o provedor grátis que não precisa
-    // de chave — melhor entregar a imagem do que bloquear o Studio.
-    const fallback = freeFallback();
+    // Rede de segurança: só vale se o provedor grátis estiver ativo no painel.
+    const fallback = await freeFallback();
+    if (!fallback) {
+      const issues = await providerIssues();
+      throw new ProviderError(
+        `Nenhum provedor de IA disponível agora. ${issues.length ? issues.join(" | ") : "Todos os provedores estão desligados no painel Admin."}` +
+          " Ligue um provedor no painel Admin › Provedores de IA ou cadastre uma API personalizada.",
+        503,
+      );
+    }
     try {
       return await run(fallback);
     } catch (e) {
       const issues = await providerIssues();
       throw new ProviderError(
-        `Nenhum provedor de IA disponível agora. ${issues.length ? issues.join(" | ") : "Todos desligados no painel Admin."}` +
-          ` — e o provedor grátis (Pollinations) também falhou: ${(e as Error).message.slice(0, 160)}.` +
+        `Nenhum provedor de IA disponível agora. ${issues.length ? issues.join(" | ") : "Todos os provedores estão desligados no painel Admin."}` +
+          ` — e o provedor grátis (${fallback.info.label}) também falhou: ${(e as Error).message.slice(0, 160)}.` +
           " Ligue um provedor no painel Admin › Provedores de IA ou cole a chave de um deles.",
         503,
       );
@@ -498,9 +521,12 @@ export async function generateImageB64(prompt: string, size = "1024x1024"): Prom
   try {
     return await withFallback(false, ({ info, model }) => runGenerate(info, model, prompt, size));
   } catch (e) {
+    // Último recurso: também respeita a desativação feita no painel Admin.
+    const fallback = await freeFallback();
+    if (!fallback || fallback.info.id !== "pollinations") throw e;
     const { w, h } = dims(size);
     try {
-      return await pollinationsRun("flux", prompt, w, h);
+      return await pollinationsRun(fallback.model, prompt, w, h);
     } catch {
       throw e;
     }
